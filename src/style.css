@@ -173,3 +173,28 @@ canvas {
   border-right: 7px solid transparent;
   border-top: 8px solid white;
 }
+
+
+/* 점심추천 강아지 상호작용 안내 */
+#dog-interaction {
+  position: fixed;
+  left: 50%;
+  bottom: 18%;
+  transform: translateX(-50%);
+
+  padding: 12px 22px;
+  background: rgba(35, 35, 35, 0.85);
+  color: white;
+
+  font-size: 15px;
+  font-weight: bold;
+
+  border-radius: 14px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+
+  white-space: nowrap;
+  z-index: 2000;
+
+  display: none;
+  pointer-events: none;
+}

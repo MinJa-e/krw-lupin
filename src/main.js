@@ -3,8 +3,65 @@ import * as THREE from 'three';
 import { io } from 'socket.io-client';
 import './style.css';
 
+
+// 점심 메뉴 데이터
+const lunchMenus = {
+  한식: [
+    '김치찌개',
+    '된장찌개',
+    '제육볶음',
+    '비빔밥',
+    '불고기',
+    '순두부찌개',
+    '돈까스'
+  ],
+
+  양식: [
+    '파스타',
+    '피자',
+    '햄버거',
+    '스테이크',
+    '리조또'
+  ],
+
+  일식: [
+    '초밥',
+    '라멘',
+    '돈카츠',
+    '규동',
+    '우동'
+  ],
+
+  중식: [
+    '짜장면',
+    '짬뽕',
+    '탕수육',
+    '마파두부'
+  ]
+};
+
+// 랜덤 점심 메뉴 추첨 함수
+function getRandomLunchMenu(category = '전체') {
+  const menus = category === '전체'
+    ? Object.values(lunchMenus).flat()
+    : lunchMenus[category] || [];
+
+  if (menus.length === 0) {
+    return '추천할 메뉴가 없습니다.';
+  }
+
+  const randomIndex = Math.floor(Math.random() * menus.length);
+
+  return menus[randomIndex];
+}
+
+
 // 멀티플레이 서버 연결
-const socket = io('https://krw-lupin.onrender.com');
+const socket = io(
+  import.meta.env.DEV
+    ? 'http://localhost:3000'
+    : 'https://krw-lupin.onrender.com'
+);
 
 // 서버 연결 성공
 socket.on('connect', () => {
@@ -201,6 +258,136 @@ const rightLeg = createLeg(0.19);
 // 장면에 캐릭터 추가
 scene.add(player);
 
+
+
+// 점심추천 강아지
+const lunchDog = new THREE.Group();
+
+// 털 색상
+const furMaterial = new THREE.MeshStandardMaterial({
+  color: 0xf2d6a5,
+  roughness: 0.9
+});
+
+const brownMaterial = new THREE.MeshStandardMaterial({
+  color: 0x93603e,
+  roughness: 0.9
+});
+
+const darkMaterial = new THREE.MeshStandardMaterial({
+  color: 0x29201c
+});
+
+const whiteMaterial = new THREE.MeshStandardMaterial({
+  color: 0xffffff
+});
+
+// 몸통
+const dogBody = new THREE.Mesh(
+  new THREE.SphereGeometry(0.55, 16, 16),
+  furMaterial
+);
+dogBody.scale.set(0.85, 0.8, 1.25);
+dogBody.position.set(0, 0.75, 0);
+lunchDog.add(dogBody);
+
+// 머리
+const dogHead = new THREE.Mesh(
+  new THREE.SphereGeometry(0.48, 20, 20),
+  furMaterial
+);
+dogHead.position.set(0, 1.4, 0.38);
+lunchDog.add(dogHead);
+
+// 귀 만들기
+function createDogEar(x) {
+  const ear = new THREE.Mesh(
+    new THREE.SphereGeometry(0.25, 16, 16),
+    brownMaterial
+  );
+
+  ear.scale.set(0.65, 1.3, 0.55);
+  ear.position.set(x, 1.35, 0.3);
+  ear.rotation.z = x < 0 ? -0.25 : 0.25;
+
+  lunchDog.add(ear);
+}
+
+createDogEar(-0.4);
+createDogEar(0.4);
+
+// 주둥이
+const muzzle = new THREE.Mesh(
+  new THREE.SphereGeometry(0.23, 16, 16),
+  whiteMaterial
+);
+muzzle.scale.set(1.15, 0.75, 0.8);
+muzzle.position.set(0, 1.22, 0.79);
+lunchDog.add(muzzle);
+
+// 코
+const dogNose = new THREE.Mesh(
+  new THREE.SphereGeometry(0.075, 12, 12),
+  darkMaterial
+);
+dogNose.position.set(0, 1.3, 0.98);
+lunchDog.add(dogNose);
+
+// 눈
+function createDogEye(x) {
+  const eye = new THREE.Mesh(
+    new THREE.SphereGeometry(0.055, 12, 12),
+    darkMaterial
+  );
+
+  eye.position.set(x, 1.48, 0.79);
+  lunchDog.add(eye);
+}
+
+createDogEye(-0.17);
+createDogEye(0.17);
+
+// 다리
+function createDogLeg(x, z) {
+  const leg = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.12, 0.28, 4, 8),
+    furMaterial
+  );
+
+  leg.position.set(x, 0.3, z);
+  lunchDog.add(leg);
+}
+
+createDogLeg(-0.32, -0.35);
+createDogLeg(0.32, -0.35);
+createDogLeg(-0.32, 0.35);
+createDogLeg(0.32, 0.35);
+
+// 꼬리
+const dogTail = new THREE.Mesh(
+  new THREE.CapsuleGeometry(0.09, 0.3, 4, 8),
+  brownMaterial
+);
+dogTail.position.set(0, 0.95, -0.65);
+dogTail.rotation.x = -0.8;
+lunchDog.add(dogTail);
+
+// 위치
+lunchDog.position.set(3, 0, 0);
+
+// 그림자
+lunchDog.traverse((obj) => {
+  if (obj.isMesh) {
+    obj.castShadow = true;
+    obj.receiveShadow = true;
+  }
+});
+
+// 장면에 추가
+scene.add(lunchDog);
+
+
+
 // 다른 플레이어 관리
 const remotePlayers = {};
 
@@ -351,6 +538,17 @@ let landingTimer = 0;
 window.addEventListener('keydown', (e) => {
   keys[e.key.toLowerCase()] = true;
 
+  // 강아지에게 점심 메뉴 추천받기
+  if (
+    e.key.toLowerCase() === 'e' &&
+    isNearLunchDog &&
+    !e.repeat &&
+    !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)
+  ) {
+    const menu = getRandomLunchMenu();
+    alert(`🐶 오늘의 점심 메뉴는...\n\n${menu} 입니다!`);
+  }
+
   if (e.code === 'Space') {
     e.preventDefault();
 
@@ -417,6 +615,9 @@ const clock = new THREE.Clock();
 const direction = new THREE.Vector3();
 const cameraOffset = new THREE.Vector3(0, 5, 8);
 
+// 강아지와 상호작용 가능한 상태인지
+let isNearLunchDog = false;
+
 // 캐릭터 머리 위 말풍선
 const speechBubble = document.getElementById('speech-bubble');
 let speechBubbleTimer = 0;
@@ -429,6 +630,8 @@ const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
 const chatMessages = document.getElementById('chat-messages');
 const chatNickname = document.getElementById('chat-nickname');
+// 점심추천 강아지 상호작용 UI
+const dogInteraction = document.getElementById('dog-interaction');
 
 function animate() {
   requestAnimationFrame(animate);
@@ -553,7 +756,16 @@ function animate() {
     player.children[2].rotation.z = Math.sin(idleTime * 0.8) * 0.04;
   }
 
+  // 플레이어와 강아지 사이의 거리 계산
+  const dogDistance = Math.sqrt(
+    Math.pow(player.position.x - lunchDog.position.x, 2) +
+    Math.pow(player.position.z - lunchDog.position.z, 2)
+  );
 
+  // 강아지와 가까우면 상호작용 안내 표시
+  isNearLunchDog = dogDistance <= 2.5;
+
+  dogInteraction.style.display = isNearLunchDog ? 'block' : 'none';
 
   // 마우스 방향에 따라 카메라 회전
   const target = player.position.clone();
