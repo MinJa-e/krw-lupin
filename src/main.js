@@ -636,6 +636,85 @@ window.addEventListener('mousemove', (e) => {
   previousMouseY = e.clientY;
 });
 
+
+// 모바일 터치 조작
+const activeTouches = new Map();
+
+// 화면 터치로 인한 스크롤 및 확대 방지
+renderer.domElement.style.touchAction = 'none';
+
+// 터치 시작
+renderer.domElement.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+
+  for (const touch of e.changedTouches) {
+    activeTouches.set(touch.identifier, {
+      side: touch.clientX < window.innerWidth / 2 ? 'move' : 'camera',
+      startX: touch.clientX,
+      startY: touch.clientY,
+      lastX: touch.clientX,
+      lastY: touch.clientY
+    });
+  }
+}, { passive: false });
+
+// 터치 이동
+renderer.domElement.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+
+  for (const touch of e.changedTouches) {
+    const data = activeTouches.get(touch.identifier);
+
+    if (!data) continue;
+
+    const deltaX = touch.clientX - data.startX;
+    const deltaY = touch.clientY - data.startY;
+
+    if (data.side === 'move') {
+      const threshold = 15;
+
+      keys['a'] = deltaX < -threshold;
+      keys['d'] = deltaX > threshold;
+      keys['w'] = deltaY < -threshold;
+      keys['s'] = deltaY > threshold;
+
+    } else {
+      const moveX = touch.clientX - data.lastX;
+      const moveY = touch.clientY - data.lastY;
+
+      cameraAngle -= moveX * 0.005;
+      cameraPitch += moveY * 0.005;
+
+      cameraPitch = Math.max(-0.2, Math.min(1.2, cameraPitch));
+    }
+
+    data.lastX = touch.clientX;
+    data.lastY = touch.clientY;
+  }
+}, { passive: false });
+
+// 손가락을 떼면 이동 정지
+function endMobileTouch(e) {
+  for (const touch of e.changedTouches) {
+    const data = activeTouches.get(touch.identifier);
+
+    if (!data) continue;
+
+    if (data.side === 'move') {
+      keys['w'] = false;
+      keys['a'] = false;
+      keys['s'] = false;
+      keys['d'] = false;
+    }
+
+    activeTouches.delete(touch.identifier);
+  }
+}
+
+renderer.domElement.addEventListener('touchend', endMobileTouch);
+renderer.domElement.addEventListener('touchcancel', endMobileTouch);
+
+
 // 게임 루프
 const clock = new THREE.Clock();
 const direction = new THREE.Vector3();
