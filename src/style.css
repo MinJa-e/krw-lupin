@@ -227,9 +227,12 @@ canvas {
 /* 모바일 버튼 위치 */
 @media (pointer: coarse) {
   #chat-toggle {
-    right: 12px;
-    bottom: 12px;
-    padding: 9px 13px;
-    font-size: 12px;
+    right: 10px;
+    bottom: 10px;
+    padding: 6px 9px;
+    font-size: 10px;
+    border-radius: 8px;
+    width: auto;
+    min-width: 0;
   }
 }
