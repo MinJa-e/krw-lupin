@@ -14,9 +14,29 @@ const players = {};
 
 io.on('connection', (socket) => {
   console.log('플레이어 접속:', socket.id);
+  console.log('서버 연결 확인!');
 
   // 기존 플레이어 목록 전달
   socket.emit('currentPlayers', players);
+
+
+  // 닉네임 변경 처리
+  socket.on('setNickname', (data) => {
+    console.log('서버에서 닉네임 변경 요청 수신:', data);
+
+    if (!players[socket.id]) return;
+
+    const nickname = String(data.nickname || '플레이어').trim().slice(0, 12);
+
+    players[socket.id].nickname = nickname || '플레이어';
+
+    // 모든 플레이어에게 변경된 닉네임 전달
+    io.emit('nicknameChanged', {
+      id: socket.id,
+      nickname: players[socket.id].nickname
+    });
+  });
+
 
   // 신규 플레이어 등록
   players[socket.id] = {
@@ -41,18 +61,21 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('playerMoved', players[socket.id]);
   });
 
+
   // 채팅 메시지 전달
   socket.on('chatMessage', (data) => {
-    const nickname = String(data.nickname || '익명').slice(0, 12);
+    const nickname = players[socket.id]?.nickname || '플레이어';
     const message = String(data.message || '').slice(0, 100);
 
     if (!message.trim()) return;
+
     io.emit('chatMessage', {
       id: socket.id,
       nickname,
       message
     });
   });
+
 
   // 플레이어 퇴장
   socket.on('disconnect', () => {

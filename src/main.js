@@ -67,10 +67,53 @@ const socket = io(
     : 'https://krw-lupin.onrender.com'
 );
 
+
+const chatNickname = document.getElementById('chat-nickname');
+
 // 서버 연결 성공
 socket.on('connect', () => {
   console.log('멀티플레이 서버 연결 성공!');
+  console.log('실제 연결 서버:', socket.io.uri);
   console.log('내 플레이어 ID:', socket.id);
+  
+
+  // 내 닉네임 서버에 등록
+  socket.emit('setNickname', {
+    nickname: chatNickname.value.trim() || '플레이어'
+  });
+});
+
+
+// 다른 플레이어의 닉네임 변경 수신
+socket.on('nicknameChanged', (data) => {
+  console.log('닉네임 변경 이벤트 수신:', data);
+  console.log('해당 플레이어 캐릭터:', remotePlayers[data.id]);
+  const remotePlayer = remotePlayers[data.id];
+
+  if (!remotePlayer) return;
+
+  const nicknameLabel = remotePlayer.children.find(
+    child => child.userData.nicknameContext
+  );
+
+  if (nicknameLabel) {
+    updateNicknameLabel(nicknameLabel, data.nickname);
+  }
+});
+
+
+// 닉네임 변경 시 서버에 즉시 전달
+chatNickname.addEventListener('input', () => {
+  console.log('닉네임 입력:', chatNickname.value);
+  console.log('서버 연결 상태:', socket.connected);
+
+  if (!socket.connected) return;
+
+  socket.emit('setNickname', {
+    nickname: chatNickname.value.trim() || '플레이어'
+  });
+
+  console.log('닉네임 변경 이벤트 전송 완료');
 });
 
 // 기존 플레이어 목록 수신
@@ -453,6 +496,74 @@ function updateRemoteSpeechBubbles() {
 }
 
 
+// 플레이어 머리 위 닉네임 생성
+function createNicknameLabel(nickname) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
+
+  const context = canvas.getContext('2d');
+
+  context.font = 'bold 48px Arial';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+
+  // 닉네임 배경
+  context.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  context.beginPath();
+  context.roundRect(20, 15, 472, 98, 25);
+  context.fill();
+
+  // 닉네임 글자
+  context.fillStyle = 'white';
+  context.fillText(nickname || '플레이어', 256, 64);
+
+  const texture = new THREE.CanvasTexture(canvas);
+
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false
+  });
+
+
+  const sprite = new THREE.Sprite(material);
+
+  sprite.scale.set(1.8, 0.45, 1);
+  sprite.position.set(0, 2.5, 0);
+
+  // 나중에 닉네임을 다시 그릴 수 있도록 저장
+  sprite.userData.nicknameContext = context;
+  sprite.userData.nicknameTexture = texture;
+
+  return sprite;
+
+}
+
+
+// 기존 닉네임 표시 업데이트
+function updateNicknameLabel(sprite, nickname) {
+  const context = sprite.userData.nicknameContext;
+  const texture = sprite.userData.nicknameTexture;
+
+  context.clearRect(0, 0, 512, 128);
+
+  context.font = 'bold 48px Arial';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+
+  context.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  context.beginPath();
+  context.roundRect(20, 15, 472, 98, 25);
+  context.fill();
+
+  context.fillStyle = 'white';
+  context.fillText(nickname || '플레이어', 256, 64);
+
+  texture.needsUpdate = true;
+}
+
+
 // 상대방 캐릭터 생성
 function createRemotePlayer(data) {
   if (remotePlayers[data.id]) return;
@@ -467,6 +578,10 @@ function createRemotePlayer(data) {
   );
 
   scene.add(remotePlayer);
+
+  // 캐릭터 머리 위에 닉네임 표시
+  const nicknameLabel = createNicknameLabel(data.nickname);
+  remotePlayer.add(nicknameLabel);
 
   remotePlayers[data.id] = remotePlayer;
 
@@ -859,7 +974,6 @@ const playerNameLabel = document.getElementById('player-name');
 const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
 const chatMessages = document.getElementById('chat-messages');
-const chatNickname = document.getElementById('chat-nickname');
 // 점심추천 강아지 상호작용 UI
 const dogInteraction = document.getElementById('dog-interaction');
 // 채팅창 열기 / 닫기
