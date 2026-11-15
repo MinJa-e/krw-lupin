@@ -236,3 +236,29 @@ canvas {
     min-width: 0;
   }
 }
+
+
+#dog-interaction-button {
+  position: fixed;
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%);
+  z-index: 5000;
+
+  padding: 12px 20px;
+  border: none;
+  border-radius: 20px;
+
+  background: #ffbd59;
+  color: #333;
+  font-size: 15px;
+  font-weight: bold;
+
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+#dog-interaction-button:active {
+  transform: translateX(-50%) scale(0.95);
+}

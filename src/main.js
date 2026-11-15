@@ -535,6 +535,18 @@ const gravity = 20;
 const jumpPower = 8;
 let landingTimer = 0;
 
+
+// 모바일 강아지 상호작용 버튼
+const dogInteractionButton = document.getElementById('dog-interaction-button');
+
+dogInteractionButton.addEventListener('click', () => {
+  if (!isNearLunchDog) return;
+
+  const menu = getRandomLunchMenu();
+  alert(`🐶 오늘의 점심 메뉴는...\n\n${menu} 입니다!`);
+});
+
+
 window.addEventListener('keydown', (e) => {
   keys[e.key.toLowerCase()] = true;
 
@@ -1009,6 +1021,9 @@ function animate() {
   isNearLunchDog = dogDistance <= 2.5;
 
   dogInteraction.style.display = isNearLunchDog ? 'block' : 'none';
+
+  dogInteractionButton.style.display =
+  isNearLunchDog ? 'block' : 'none';
 
   // 마우스 방향에 따라 카메라 회전
   const target = player.position.clone();
