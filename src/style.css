@@ -129,7 +129,8 @@ canvas {
   border-top: 9px solid white;
 }
 
-#player-name {
+#player-name,
+.remote-player-name {
   position: fixed;
   display: none;
   z-index: 190;
@@ -261,4 +262,3 @@ canvas {
     font-size: 12px;
   }
 }
-

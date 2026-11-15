@@ -75,7 +75,7 @@ socket.on('connect', () => {
   console.log('멀티플레이 서버 연결 성공!');
   console.log('실제 연결 서버:', socket.io.uri);
   console.log('내 플레이어 ID:', socket.id);
-  
+
 
   // 내 닉네임 서버에 등록
   socket.emit('setNickname', {
@@ -86,19 +86,11 @@ socket.on('connect', () => {
 
 // 다른 플레이어의 닉네임 변경 수신
 socket.on('nicknameChanged', (data) => {
-  console.log('닉네임 변경 이벤트 수신:', data);
-  console.log('해당 플레이어 캐릭터:', remotePlayers[data.id]);
-  const remotePlayer = remotePlayers[data.id];
+  const nicknameLabel = remotePlayerNames[data.id];
 
-  if (!remotePlayer) return;
+  if (!nicknameLabel) return;
 
-  const nicknameLabel = remotePlayer.children.find(
-    child => child.userData.nicknameContext
-  );
-
-  if (nicknameLabel) {
-    updateNicknameLabel(nicknameLabel, data.nickname);
-  }
+  nicknameLabel.textContent = data.nickname;
 });
 
 
@@ -437,6 +429,8 @@ scene.add(lunchDog);
 
 // 다른 플레이어 관리
 const remotePlayers = {};
+// 상대방 닉네임 HTML 요소 관리
+const remotePlayerNames = {};
 
 
 // 상대방 말풍선 관리
@@ -494,6 +488,45 @@ function updateRemoteSpeechBubbles() {
     bubble.style.top = `${y}px`;
   });
 }
+
+
+// 상대방 닉네임 위치 갱신
+function updateRemotePlayerNames() {
+  Object.entries(remotePlayerNames).forEach(([playerId, label]) => {
+    const remotePlayer = remotePlayers[playerId];
+
+    if (!remotePlayer) return;
+
+    const position = new THREE.Vector3(
+      remotePlayer.position.x,
+      remotePlayer.position.y + 2.7,
+      remotePlayer.position.z
+    );
+
+    position.project(camera);
+
+    const rect = renderer.domElement.getBoundingClientRect();
+
+    const x = rect.left + (position.x + 1) * rect.width / 2;
+    const y = rect.top + (1 - position.y) * rect.height / 2;
+
+    const visible =
+      position.z < 1 &&
+      position.z > -1 &&
+      x >= rect.left &&
+      x <= rect.right &&
+      y >= rect.top &&
+      y <= rect.bottom;
+
+    label.style.display = visible ? 'block' : 'none';
+
+    if (visible) {
+      label.style.left = `${x}px`;
+      label.style.top = `${y}px`;
+    }
+  });
+}
+
 
 
 
@@ -581,11 +614,12 @@ function updateNicknameLabel(sprite, nickname) {
   texture.needsUpdate = true;
 }
 
+
 // 상대방 캐릭터 생성
 function createRemotePlayer(data) {
   if (remotePlayers[data.id]) return;
 
-  // 내 캐릭터를 복제
+  // 내 캐릭터 복제
   const remotePlayer = player.clone(true);
 
   remotePlayer.position.set(
@@ -596,14 +630,19 @@ function createRemotePlayer(data) {
 
   scene.add(remotePlayer);
 
-  // 캐릭터 머리 위에 닉네임 표시
-  const nicknameLabel = createNicknameLabel(data.nickname);
-  remotePlayer.add(nicknameLabel);
+  // 내 캐릭터와 동일한 HTML 닉네임 생성
+  const nicknameLabel = document.createElement('div');
+  nicknameLabel.className = 'remote-player-name';
+  nicknameLabel.textContent = data.nickname || '플레이어';
+
+  document.body.appendChild(nicknameLabel);
 
   remotePlayers[data.id] = remotePlayer;
+  remotePlayerNames[data.id] = nicknameLabel;
 
   console.log('상대방 캐릭터 생성:', data.id);
 }
+
 
 // 기존 접속자 불러오기
 socket.on('currentPlayers', (players) => {
@@ -623,6 +662,12 @@ socket.on('playerDisconnected', (playerId) => {
 
   scene.remove(remotePlayers[playerId]);
   delete remotePlayers[playerId];
+
+  // 상대방 닉네임 제거
+  if (remotePlayerNames[playerId]) {
+    remotePlayerNames[playerId].remove();
+    delete remotePlayerNames[playerId];
+  }
 
   console.log('상대방 캐릭터 제거:', playerId);
 });
@@ -1208,6 +1253,8 @@ function animate() {
   }
 
   updateRemoteSpeechBubbles();
+  updateRemotePlayerNames();
+
   renderer.render(scene, camera);
 }
 
