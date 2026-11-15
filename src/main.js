@@ -637,82 +637,125 @@ window.addEventListener('mousemove', (e) => {
 });
 
 
-// 모바일 터치 조작
-const activeTouches = new Map();
 
-// 화면 터치로 인한 스크롤 및 확대 방지
+// 모바일 터치 이동 및 카메라 회전
+let touchStartTime = 0;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchLastX = 0;
+let touchLastY = 0;
+let touchMoved = false;
+let isTouchCamera = false;
+
+// 이동 목적지
+const moveTarget = new THREE.Vector3();
+let isMovingToTarget = false;
+
+// 바닥에 터치한 위치를 3D 좌표로 변환
+const touchRaycaster = new THREE.Raycaster();
+const touchPointer = new THREE.Vector2();
+
+const groundPlane = new THREE.Plane(
+  new THREE.Vector3(0, 1, 0),
+  0
+);
+
+function setTouchDestination(x, y) {
+  const rect = renderer.domElement.getBoundingClientRect();
+
+  touchPointer.x = ((x - rect.left) / rect.width) * 2 - 1;
+  touchPointer.y = -((y - rect.top) / rect.height) * 2 + 1;
+
+  touchRaycaster.setFromCamera(touchPointer, camera);
+
+  const destination = new THREE.Vector3();
+
+  if (touchRaycaster.ray.intersectPlane(groundPlane, destination)) {
+    moveTarget.set(destination.x, 0, destination.z);
+    isMovingToTarget = true;
+  }
+}
+
 renderer.domElement.style.touchAction = 'none';
 
 // 터치 시작
 renderer.domElement.addEventListener('touchstart', (e) => {
   e.preventDefault();
 
-  for (const touch of e.changedTouches) {
-    activeTouches.set(touch.identifier, {
-      side: touch.clientX < window.innerWidth / 2 ? 'move' : 'camera',
-      startX: touch.clientX,
-      startY: touch.clientY,
-      lastX: touch.clientX,
-      lastY: touch.clientY
-    });
-  }
+  if (e.touches.length > 1) return;
+
+  const touch = e.changedTouches[0];
+
+  touchStartTime = Date.now();
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+  touchLastX = touch.clientX;
+  touchLastY = touch.clientY;
+
+  touchMoved = false;
+  isTouchCamera = false;
 }, { passive: false });
 
 // 터치 이동
 renderer.domElement.addEventListener('touchmove', (e) => {
   e.preventDefault();
 
-  for (const touch of e.changedTouches) {
-    const data = activeTouches.get(touch.identifier);
+  const touch = e.changedTouches[0];
 
-    if (!data) continue;
+  const deltaX = touch.clientX - touchStartX;
+  const deltaY = touch.clientY - touchStartY;
 
-    const deltaX = touch.clientX - data.startX;
-    const deltaY = touch.clientY - data.startY;
-
-    if (data.side === 'move') {
-      const threshold = 15;
-
-      keys['a'] = deltaX < -threshold;
-      keys['d'] = deltaX > threshold;
-      keys['w'] = deltaY < -threshold;
-      keys['s'] = deltaY > threshold;
-
-    } else {
-      const moveX = touch.clientX - data.lastX;
-      const moveY = touch.clientY - data.lastY;
-
-      cameraAngle -= moveX * 0.005;
-      cameraPitch += moveY * 0.005;
-
-      cameraPitch = Math.max(-0.2, Math.min(1.2, cameraPitch));
-    }
-
-    data.lastX = touch.clientX;
-    data.lastY = touch.clientY;
+  // 일정 시간 이상 누르고 움직이면 카메라 모드
+  if (
+    !isTouchCamera &&
+    Date.now() - touchStartTime >= 300 &&
+    Math.hypot(deltaX, deltaY) > 8
+  ) {
+    isTouchCamera = true;
+    touchMoved = true;
   }
+
+  if (isTouchCamera) {
+    const moveX = touch.clientX - touchLastX;
+    const moveY = touch.clientY - touchLastY;
+
+    cameraAngle -= moveX * 0.005;
+    cameraPitch += moveY * 0.005;
+
+    cameraPitch = Math.max(-0.2, Math.min(1.2, cameraPitch));
+  }
+
+  touchLastX = touch.clientX;
+  touchLastY = touch.clientY;
 }, { passive: false });
 
-// 손가락을 떼면 이동 정지
-function endMobileTouch(e) {
-  for (const touch of e.changedTouches) {
-    const data = activeTouches.get(touch.identifier);
+// 터치 종료
+function finishTouch(e) {
+  const touch = e.changedTouches[0];
 
-    if (!data) continue;
+  if (!touch) return;
 
-    if (data.side === 'move') {
-      keys['w'] = false;
-      keys['a'] = false;
-      keys['s'] = false;
-      keys['d'] = false;
-    }
+  const elapsed = Date.now() - touchStartTime;
+  const distance = Math.hypot(
+    touch.clientX - touchStartX,
+    touch.clientY - touchStartY
+  );
 
-    activeTouches.delete(touch.identifier);
+  // 짧게 터치하고 거의 움직이지 않았다면 목적지 이동
+  if (
+    !isTouchCamera &&
+    elapsed < 300 &&
+    distance < 15
+  ) {
+    setTouchDestination(touch.clientX, touch.clientY);
   }
+
+  isTouchCamera = false;
 }
 
-renderer.domElement.addEventListener('touchend', endMobileTouch);
-renderer.domElement.addEventListener('touchcancel', endMobileTouch);
+renderer.domElement.addEventListener('touchend', finishTouch);
+renderer.domElement.addEventListener('touchcancel', finishTouch);
+
 
 
 // 게임 루프
@@ -812,13 +855,50 @@ function animate() {
     -Math.cos(cameraAngle) * forward - Math.sin(cameraAngle) * right
   );
 
+  // 모바일 터치 목적지 이동
+  let touchMoveDistance = 0;
 
+  // 키보드 입력이 있으면 자동 이동 취소
+  if (direction.lengthSq() > 0) {
+    isMovingToTarget = false;
+  }
+
+  // 키보드 입력이 없으면 터치 목적지로 이동
+  if (direction.lengthSq() === 0 && isMovingToTarget) {
+    direction.subVectors(moveTarget, player.position);
+    direction.y = 0;
+
+    touchMoveDistance = direction.length();
+
+    if (touchMoveDistance <= 0.15) {
+      player.position.x = moveTarget.x;
+      player.position.z = moveTarget.z;
+      isMovingToTarget = false;
+      direction.set(0, 0, 0);
+    } else {
+      direction.normalize();
+    }
+  }
 
   if (direction.length() > 0) {
     direction.normalize();
 
     // 캐릭터 이동
-    player.position.addScaledVector(direction, speed * delta);
+    if (isMovingToTarget && touchMoveDistance > 0) {
+      const step = Math.min(speed * delta, touchMoveDistance);
+
+      player.position.addScaledVector(direction, step);
+
+      if (step >= touchMoveDistance) {
+        player.position.x = moveTarget.x;
+        player.position.z = moveTarget.z;
+        isMovingToTarget = false;
+      }
+    } else {
+      player.position.addScaledVector(direction, speed * delta);
+    }
+
+    // 이동 방향으로 캐릭터 회전
     player.rotation.y = Math.atan2(direction.x, direction.z);
 
     // 걷기와 달리기 애니메이션
