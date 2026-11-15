@@ -65,6 +65,8 @@ io.on('connection', (socket) => {
 });
 
 // 서버 실행
-httpServer.listen(3000, () => {
-  console.log('멀티플레이 서버 실행: http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+
+httpServer.listen(PORT, () => {
+  console.log(`멀티플레이 서버 실행: ${PORT}`);
 });
