@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 import './style.css';
 
 // 멀티플레이 서버 연결
-const socket = io('http://localhost:3000');
+const socket = io('https://krw-lupin.onrender.com');
 
 // 서버 연결 성공
 socket.on('connect', () => {
