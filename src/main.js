@@ -496,73 +496,90 @@ function updateRemoteSpeechBubbles() {
 }
 
 
-// 플레이어 머리 위 닉네임 생성
+
+// 닉네임 표시 생성 및 크기 조절
 function createNicknameLabel(nickname) {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 128;
+  canvas.width = 1024;
+  canvas.height = 256;
 
   const context = canvas.getContext('2d');
 
-  context.font = 'bold 48px Arial';
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(canvas),
+      transparent: true,
+      depthTest: false
+    })
+  );
 
-  // 닉네임 배경
-  context.fillStyle = 'rgba(0, 0, 0, 0.55)';
-  context.beginPath();
-  context.roundRect(20, 15, 472, 98, 25);
-  context.fill();
-
-  // 닉네임 글자
-  context.fillStyle = 'white';
-  context.fillText(nickname || '플레이어', 256, 64);
-
-  const texture = new THREE.CanvasTexture(canvas);
-
-  const material = new THREE.SpriteMaterial({
-    map: texture,
-    transparent: true,
-    depthTest: false
-  });
-
-
-  const sprite = new THREE.Sprite(material);
-
-  sprite.scale.set(1.8, 0.45, 1);
   sprite.position.set(0, 2.5, 0);
 
-  // 나중에 닉네임을 다시 그릴 수 있도록 저장
   sprite.userData.nicknameContext = context;
-  sprite.userData.nicknameTexture = texture;
+  sprite.userData.nicknameTexture = sprite.material.map;
+
+  updateNicknameLabel(sprite, nickname);
 
   return sprite;
-
 }
 
 
-// 기존 닉네임 표시 업데이트
+// 닉네임 표시 업데이트
 function updateNicknameLabel(sprite, nickname) {
   const context = sprite.userData.nicknameContext;
   const texture = sprite.userData.nicknameTexture;
+  const canvas = context.canvas;
 
-  context.clearRect(0, 0, 512, 128);
+  const name = (nickname || '플레이어').slice(0, 12);
 
-  context.font = 'bold 48px Arial';
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
+  // 글자 크기 설정
+  let fontSize = 48;
+  context.font = `bold ${fontSize}px Arial`;
 
-  context.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  while (
+    context.measureText(name).width > 440 &&
+    fontSize > 28
+  ) {
+    fontSize -= 2;
+    context.font = `bold ${fontSize}px Arial`;
+  }
+
+  const textWidth = context.measureText(name).width;
+
+  // 닉네임 길이에 맞춰 캔버스 너비 변경
+  const padding = 60;
+  canvas.width = Math.ceil(textWidth + padding);
+  canvas.height = 128;
+
+  const centerX = canvas.width / 2;
+
+  // 배경
+  context.fillStyle = 'rgba(0, 0, 0, 0.65)';
   context.beginPath();
-  context.roundRect(20, 15, 472, 98, 25);
+  context.roundRect(
+    0,
+    19,
+    canvas.width,
+    90,
+    22
+  );
   context.fill();
 
+  // 글자
+  context.font = `bold ${fontSize}px Arial`;
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
   context.fillStyle = 'white';
-  context.fillText(nickname || '플레이어', 256, 64);
+  context.fillText(name, centerX, 64);
+
+  // 캔버스 비율에 맞춰 Sprite 크기 조절
+  const height = 0.45;
+  const width = (canvas.width / canvas.height) * height;
+
+  sprite.scale.set(width, height, 1);
 
   texture.needsUpdate = true;
 }
-
 
 // 상대방 캐릭터 생성
 function createRemotePlayer(data) {
