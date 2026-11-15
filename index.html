@@ -16,9 +16,6 @@
   <div id="player-name"></div>
 
   <!-- 점심추천 강아지 상호작용 안내 -->
-  <div id="dog-interaction">
-    🐶 점심추천 강아지에게 말을 걸려면 [E]
-  </div>
   <div id="chat">
     <div id="chat-messages">
       <div class="chat-system">채팅에 오신 것을 환영합니다!</div>
@@ -32,9 +29,16 @@
   <!-- 채팅창 열기/닫기 버튼 -->
 <button id="chat-toggle">💬 채팅 숨기기</button>
 
-<button id="dog-interaction-button" style="display: none;">
-  🐶 메뉴 추천받기
-</button>
+
+<div id="dog-interaction-buttons" style="display: none;">
+  <button id="dog-interaction-button">
+    🍱 점심 메뉴 추천
+  </button>
+
+  <button id="lotto-interaction-button">
+    🎱 로또 번호 추천
+  </button>
+</div>
 
   <script type="module" src="/src/main.js"></script>
 </body>

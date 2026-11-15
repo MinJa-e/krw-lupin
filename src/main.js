@@ -540,15 +540,35 @@ const jumpPower = 8;
 let landingTimer = 0;
 
 
-// 모바일 강아지 상호작용 버튼
-const dogInteractionButton = document.getElementById('dog-interaction-button');
 
+// 강아지 상호작용 버튼
+const dogInteractionButtons = document.getElementById('dog-interaction-buttons');
+const dogInteractionButton = document.getElementById('dog-interaction-button');
+const lottoInteractionButton = document.getElementById('lotto-interaction-button');
+
+// 점심 메뉴 추천
 dogInteractionButton.addEventListener('click', () => {
   if (!isNearLunchDog) return;
 
   const menu = getRandomLunchMenu();
   alert(`🐶 오늘의 점심 메뉴는...\n\n${menu} 입니다!`);
 });
+
+// 로또 번호 추천
+lottoInteractionButton.addEventListener('click', () => {
+  if (!isNearLunchDog) return;
+
+  const numbers = new Set();
+
+  while (numbers.size < 6) {
+    numbers.add(Math.floor(Math.random() * 45) + 1);
+  }
+
+  const lottoNumbers = [...numbers].sort((a, b) => a - b);
+
+  alert(`🐶 행운의 로또 번호는...\n\n${lottoNumbers.join(', ')} 🍀`);
+});
+
 
 
 window.addEventListener('keydown', (e) => {
@@ -1024,8 +1044,8 @@ function animate() {
   // 강아지와 가까우면 상호작용 안내 표시
   isNearLunchDog = dogDistance <= 2.5;
 
-  dogInteractionButton.style.display =
-  isNearLunchDog ? 'block' : 'none';
+  dogInteractionButtons.style.display =
+    isNearLunchDog ? 'flex' : 'none';
 
   // 마우스 방향에 따라 카메라 회전
   const target = player.position.clone();
