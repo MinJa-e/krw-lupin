@@ -568,6 +568,32 @@ window.addEventListener('keyup', (e) => {
   keys[e.key.toLowerCase()] = false;
 });
 
+// 모바일 이동 패드 입력
+const moveButtons = document.querySelectorAll('.move-btn');
+
+moveButtons.forEach((button) => {
+  const key = button.dataset.key;
+
+  // 버튼을 누르면 이동 시작
+  button.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    keys[key] = true;
+    button.setPointerCapture(e.pointerId);
+  });
+
+  // 버튼에서 손을 떼면 이동 중지
+  const stopMoving = (e) => {
+    e.preventDefault();
+    keys[key] = false;
+  };
+
+  button.addEventListener('pointerup', stopMoving);
+  button.addEventListener('pointercancel', stopMoving);
+  button.addEventListener('lostpointercapture', () => {
+    keys[key] = false;
+  });
+});
+
 // 카메라 설정
 let cameraAngle = 0;
 let cameraPitch = 0.3;
