@@ -198,3 +198,38 @@ canvas {
   display: none;
   pointer-events: none;
 }
+
+/* 채팅창 열기/닫기 버튼 */
+#chat-toggle {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 4000;
+
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+
+  background: rgba(35, 35, 35, 0.85);
+  color: white;
+
+  font-size: 14px;
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+/* 채팅창 숨김 */
+#chat.hidden {
+  display: none;
+}
+
+/* 모바일 버튼 위치 */
+@media (pointer: coarse) {
+  #chat-toggle {
+    right: 12px;
+    bottom: 12px;
+    padding: 9px 13px;
+    font-size: 12px;
+  }
+}

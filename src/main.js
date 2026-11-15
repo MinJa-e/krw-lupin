@@ -647,6 +647,10 @@ let touchLastY = 0;
 let touchMoved = false;
 let isTouchCamera = false;
 
+// 두 손가락 확대/축소 상태
+let isPinching = false;
+let lastPinchDistance = 0;
+
 // 이동 목적지
 const moveTarget = new THREE.Vector3();
 let isMovingToTarget = false;
@@ -678,11 +682,28 @@ function setTouchDestination(x, y) {
 
 renderer.domElement.style.touchAction = 'none';
 
+
+// 두 손가락 사이의 거리 계산
+function getPinchDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+
+  return Math.hypot(dx, dy);
+}
+
 // 터치 시작
 renderer.domElement.addEventListener('touchstart', (e) => {
   e.preventDefault();
 
-  if (e.touches.length > 1) return;
+  // 두 손가락 터치 시작
+  if (e.touches.length === 2) {
+    isPinching = true;
+    lastPinchDistance = getPinchDistance(e.touches);
+    isTouchCamera = false;
+    return;
+  }
+
+  if (e.touches.length > 2) return;
 
   const touch = e.changedTouches[0];
 
@@ -700,12 +721,27 @@ renderer.domElement.addEventListener('touchstart', (e) => {
 renderer.domElement.addEventListener('touchmove', (e) => {
   e.preventDefault();
 
+  // 두 손가락 확대 / 축소
+  if (e.touches.length === 2 && isPinching) {
+    const currentDistance = getPinchDistance(e.touches);
+    const deltaDistance = currentDistance - lastPinchDistance;
+
+    cameraDistance -= deltaDistance * 0.025;
+    cameraDistance = Math.max(3, Math.min(15, cameraDistance));
+
+    lastPinchDistance = currentDistance;
+    return;
+  }
+
+  if (isPinching) return;
+
   const touch = e.changedTouches[0];
+  if (!touch) return;
 
   const deltaX = touch.clientX - touchStartX;
   const deltaY = touch.clientY - touchStartY;
 
-  // 일정 시간 이상 누르고 움직이면 카메라 모드
+  // 길게 누르고 움직이면 카메라 회전
   if (
     !isTouchCamera &&
     Date.now() - touchStartTime >= 300 &&
@@ -731,8 +767,18 @@ renderer.domElement.addEventListener('touchmove', (e) => {
 
 // 터치 종료
 function finishTouch(e) {
-  const touch = e.changedTouches[0];
+  // 핀치 동작 중 손가락을 떼면 확대/축소 종료
+  if (isPinching) {
+    if (e.touches.length < 2) {
+      isPinching = false;
+      lastPinchDistance = 0;
+    }
 
+    isTouchCamera = false;
+    return;
+  }
+
+  const touch = e.changedTouches[0];
   if (!touch) return;
 
   const elapsed = Date.now() - touchStartTime;
@@ -741,7 +787,6 @@ function finishTouch(e) {
     touch.clientY - touchStartY
   );
 
-  // 짧게 터치하고 거의 움직이지 않았다면 목적지 이동
   if (
     !isTouchCamera &&
     elapsed < 300 &&
@@ -755,6 +800,7 @@ function finishTouch(e) {
 
 renderer.domElement.addEventListener('touchend', finishTouch);
 renderer.domElement.addEventListener('touchcancel', finishTouch);
+
 
 
 
@@ -780,6 +826,18 @@ const chatMessages = document.getElementById('chat-messages');
 const chatNickname = document.getElementById('chat-nickname');
 // 점심추천 강아지 상호작용 UI
 const dogInteraction = document.getElementById('dog-interaction');
+// 채팅창 열기 / 닫기
+const chatToggle = document.getElementById('chat-toggle');
+
+chatToggle.addEventListener('click', () => {
+  chat.classList.toggle('hidden');
+
+  if (chat.classList.contains('hidden')) {
+    chatToggle.textContent = '💬 채팅 열기';
+  } else {
+    chatToggle.textContent = '💬 채팅 숨기기';
+  }
+});
 
 function animate() {
   requestAnimationFrame(animate);
