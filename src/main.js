@@ -1020,8 +1020,6 @@ function animate() {
   // 강아지와 가까우면 상호작용 안내 표시
   isNearLunchDog = dogDistance <= 2.5;
 
-  dogInteraction.style.display = isNearLunchDog ? 'block' : 'none';
-
   dogInteractionButton.style.display =
   isNearLunchDog ? 'block' : 'none';
 
