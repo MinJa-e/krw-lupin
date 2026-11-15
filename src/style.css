@@ -1,0 +1,175 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: sans-serif;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#chat {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 320px;
+  z-index: 100;
+  font-family: sans-serif;
+}
+
+#chat-messages {
+  height: 180px;
+  overflow-y: auto;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  font-size: 13px;
+}
+
+.chat-system {
+  color: #a8d8ff;
+  margin-bottom: 8px;
+}
+
+.chat-message {
+  margin-bottom: 7px;
+  overflow-wrap: anywhere;
+}
+
+#chat-form {
+  display: flex;
+  gap: 6px;
+}
+
+#chat-input {
+  flex: 1;
+  min-width: 0;
+  padding: 11px;
+  border: none;
+  border-radius: 7px;
+  outline: none;
+}
+
+#chat-form button {
+  padding: 0 14px;
+  border: none;
+  border-radius: 7px;
+  background: #5689d8;
+  color: white;
+  cursor: pointer;
+}
+
+#chat-nickname {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 9px;
+  margin-bottom: 6px;
+  border: none;
+  border-radius: 7px;
+  outline: none;
+}
+
+#chat-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  max-height: 100px;
+  padding: 10px;
+  border: none;
+  border-radius: 7px;
+  outline: none;
+  resize: none;
+  font-family: sans-serif;
+  line-height: 18px;
+  overflow-y: auto;
+}
+
+#speech-bubble {
+  position: fixed;
+  display: none;
+  z-index: 200;
+  max-width: 220px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+}
+
+#speech-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 9px solid white;
+}
+
+#player-name {
+  position: fixed;
+  display: none;
+  z-index: 190;
+  transform: translate(-50%, -100%);
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: rgba(25, 25, 25, 0.75);
+  color: white;
+  font-size: 13px;
+  font-weight: bold;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+
+.remote-speech-bubble {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  padding: 8px 14px;
+  background: white;
+  color: #222;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: bold;
+  white-space: pre-wrap;
+  max-width: 220px;
+  overflow-wrap: break-word;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  pointer-events: none;
+  display: none;
+}
+
+.remote-speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 8px solid white;
+}

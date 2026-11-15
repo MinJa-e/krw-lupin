@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>krw-lupin</title>
+</head>
+
+<body>
+  <div id="app">
+
+  </div>
+  <div id="speech-bubble">
+    <script type="module" src="/src/main.js"></script>
+  </div>
+  <div id="player-name"></div>
+  <div id="chat">
+    <div id="chat-messages">
+      <div class="chat-system">채팅에 오신 것을 환영합니다!</div>
+    </div>
+    <input id="chat-nickname" type="text" placeholder="닉네임을 입력하세요" value="플레이어" maxlength="12" />
+    <form id="chat-form">
+      <textarea id="chat-input" placeholder="메시지를 입력하세요..." maxlength="100" autocomplete="off" rows="1"></textarea>
+      <button type="submit">전송</button>
+    </form>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
