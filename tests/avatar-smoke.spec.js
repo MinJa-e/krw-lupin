@@ -16,6 +16,8 @@ test('앱이 오류 없이 시작하고 앉기 버튼이 자세 상태를 토글
   }
   await expect.poll(() => sitButton.getAttribute('data-avatar-type')).toBe('human');
   await expect.poll(async () => Number(await sitButton.getAttribute('data-sit-progress'))).toBeLessThan(0.1);
+  const standingHeadY = Number(await sitButton.getAttribute('data-head-y'));
+  expect(standingHeadY).toBeGreaterThan(1.45);
   if (hasE2EDiagnostics) {
     await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAvatarState().type)).toBe('human');
     await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.detectCompanionType())).toBe('dog');
@@ -24,7 +26,10 @@ test('앱이 오류 없이 시작하고 앉기 버튼이 자세 상태를 토글
   await sitButton.click();
   await expect(page.getByRole('button', { name: '일어서기', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(() => sitButton.getAttribute('data-pose')).toBe('sit');
-  await expect.poll(async () => Number(await sitButton.getAttribute('data-sit-progress'))).toBeGreaterThan(0.8);
+  await expect.poll(async () => Number(await sitButton.getAttribute('data-sit-progress'))).toBeGreaterThan(0.95);
+  await expect.poll(async () => Number(await sitButton.getAttribute('data-head-y'))).toBeLessThan(standingHeadY - 0.25);
+  await expect.poll(async () => Number(await sitButton.getAttribute('data-torso-bottom-y'))).toBeLessThan(0.1);
+  expect(Number(await sitButton.getAttribute('data-torso-bottom-y'))).toBeGreaterThan(-0.05);
   if (hasE2EDiagnostics) {
     await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAvatarState().pose)).toBe('sit');
   }
@@ -33,6 +38,7 @@ test('앱이 오류 없이 시작하고 앉기 버튼이 자세 상태를 토글
   await expect(page.getByRole('button', { name: '앉기', exact: true })).toHaveAttribute('aria-pressed', 'false');
   await expect.poll(() => sitButton.getAttribute('data-pose')).toBe('idle');
   await expect.poll(async () => Number(await sitButton.getAttribute('data-sit-progress'))).toBeLessThan(0.1);
+  await expect.poll(async () => Number(await sitButton.getAttribute('data-head-y'))).toBeGreaterThan(standingHeadY - 0.05);
   if (hasE2EDiagnostics) {
     await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAvatarState().pose)).toBe('idle');
   }

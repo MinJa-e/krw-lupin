@@ -813,33 +813,39 @@ torso.name = 'avatar-torso';
 torso.castShadow = true;
 humanAvatarTemplate.add(torso);
 
+// 머리와 목을 하나의 피벗으로 묶어 앉을 때 어깨와 함께 낮아지게 합니다.
+const humanHeadGroup = new THREE.Group();
+humanHeadGroup.position.y = 1.53;
+humanHeadGroup.name = 'avatar-head-group';
+humanAvatarTemplate.add(humanHeadGroup);
+
 // 목
-makeSphere(humanAvatarTemplate, 0.15, [0, 1.53, 0], skinMat);
+makeSphere(humanHeadGroup, 0.15, [0, 0, 0], skinMat);
 
 // 머리
-const avatarHead = makeSphere(humanAvatarTemplate, 0.42, [0, 1.92, 0], skinMat);
+const avatarHead = makeSphere(humanHeadGroup, 0.42, [0, 0.39, 0], skinMat);
 avatarHead.name = 'avatar-head';
 
 // 머리카락
-makeSphere(humanAvatarTemplate, 0.43, [0, 2.12, -0.04], hairMat, [1.02, 0.72, 1]);
-makeSphere(humanAvatarTemplate, 0.2, [0, 2.18, 0.34], hairMat, [1.5, 0.65, 0.65]);
+makeSphere(humanHeadGroup, 0.43, [0, 0.59, -0.04], hairMat, [1.02, 0.72, 1]);
+makeSphere(humanHeadGroup, 0.2, [0, 0.65, 0.34], hairMat, [1.5, 0.65, 0.65]);
 
 // 귀
-makeSphere(humanAvatarTemplate, 0.11, [-0.4, 1.91, 0], skinMat);
-makeSphere(humanAvatarTemplate, 0.11, [0.4, 1.91, 0], skinMat);
+makeSphere(humanHeadGroup, 0.11, [-0.4, 0.38, 0], skinMat);
+makeSphere(humanHeadGroup, 0.11, [0.4, 0.38, 0], skinMat);
 
 // 눈
-const leftEye = makeSphere(humanAvatarTemplate, 0.045, [-0.15, 1.98, 0.365], eyeMat);
-const rightEye = makeSphere(humanAvatarTemplate, 0.045, [0.15, 1.98, 0.365], eyeMat);
+const leftEye = makeSphere(humanHeadGroup, 0.045, [-0.15, 0.45, 0.365], eyeMat);
+const rightEye = makeSphere(humanHeadGroup, 0.045, [0.15, 0.45, 0.365], eyeMat);
 leftEye.name = 'avatar-left-eye';
 rightEye.name = 'avatar-right-eye';
 
 // 눈 반짝임
-makeSphere(humanAvatarTemplate, 0.014, [-0.16, 2.0, 0.402], whiteMat);
-makeSphere(humanAvatarTemplate, 0.014, [0.14, 2.0, 0.402], whiteMat);
+makeSphere(humanHeadGroup, 0.014, [-0.16, 0.47, 0.402], whiteMat);
+makeSphere(humanHeadGroup, 0.014, [0.14, 0.47, 0.402], whiteMat);
 
 // 입
-makeSphere(humanAvatarTemplate, 0.035, [0, 1.84, 0.408], eyeMat, [1.3, 0.65, 0.5]);
+makeSphere(humanHeadGroup, 0.035, [0, 0.31, 0.408], eyeMat, [1.3, 0.65, 0.5]);
 
 // 팔 생성 함수
 function createArm(x) {
@@ -867,23 +873,36 @@ const rightArm = createArm(0.42);
 
 // 다리 생성 함수
 function createLeg(x) {
-  const pivot = new THREE.Group();
-  pivot.position.set(x, 0.67, 0);
-  pivot.name = x < 0 ? 'avatar-left-leg' : 'avatar-right-leg';
-  humanAvatarTemplate.add(pivot);
+  const side = x < 0 ? 'left' : 'right';
+  const hip = new THREE.Group();
+  hip.position.set(x, 0.67, 0);
+  hip.name = `avatar-${side}-leg`;
+  humanAvatarTemplate.add(hip);
 
-  const leg = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.14, 0.4, 4, 8),
+  const thigh = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.14, 0.12, 4, 8),
     pantsMat
   );
+  thigh.position.y = -0.18;
+  thigh.castShadow = true;
+  hip.add(thigh);
 
-  leg.position.y = -0.25;
-  leg.castShadow = true;
-  pivot.add(leg);
+  const knee = new THREE.Group();
+  knee.position.y = -0.36;
+  knee.name = `avatar-${side}-knee`;
+  hip.add(knee);
 
-  makeSphere(pivot, 0.15, [0, -0.52, 0.07], shoeMat, [1, 0.65, 1.5]);
+  const shin = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.12, 0.08, 4, 8),
+    pantsMat
+  );
+  shin.position.y = -0.12;
+  shin.castShadow = true;
+  knee.add(shin);
 
-  return pivot;
+  makeSphere(knee, 0.15, [0, -0.21, 0.12], shoeMat, [1, 0.65, 1.5]);
+
+  return hip;
 }
 
 const leftLeg = createLeg(-0.19);
@@ -1066,7 +1085,14 @@ function createAvatarController(typeOrModel = 'human') {
   return {
     type: selectedType,
     label: definition.label,
-    height: definition.height,
+    get height() {
+      const sitHeight = definition.sitHeight ?? definition.height;
+      return THREE.MathUtils.lerp(
+        definition.height,
+        sitHeight,
+        model.userData.poseProgress ?? 0
+      );
+    },
     model,
     pose: 'idle',
     update(pose, time, delta, running = false) {
@@ -1078,11 +1104,13 @@ function createAvatarController(typeOrModel = 'human') {
 
 function createHumanoidAnimator(model) {
   const torso = model.getObjectByName('avatar-torso');
-  const head = model.getObjectByName('avatar-head');
+  const head = model.getObjectByName('avatar-head-group');
   const leftArm = model.getObjectByName('avatar-left-arm');
   const rightArm = model.getObjectByName('avatar-right-arm');
   const leftLeg = model.getObjectByName('avatar-left-leg');
   const rightLeg = model.getObjectByName('avatar-right-leg');
+  const leftKnee = model.getObjectByName('avatar-left-knee');
+  const rightKnee = model.getObjectByName('avatar-right-knee');
   const leftEye = model.getObjectByName('avatar-left-eye');
   const rightEye = model.getObjectByName('avatar-right-eye');
   let sitBlend = 0;
@@ -1098,21 +1126,28 @@ function createHumanoidAnimator(model) {
       ? Math.abs(Math.sin(time * gaitSpeed * 2)) * (isRunning ? 0.09 : 0.035)
       : Math.sin(time * 2) * 0.035;
 
-    torso.position.y = THREE.MathUtils.lerp(1.05 + breathing, 0.88, sitBlend);
+    model.position.y = THREE.MathUtils.lerp(0, -0.035, sitBlend);
+    torso.position.y = THREE.MathUtils.lerp(1.05 + breathing, 0.63, sitBlend);
     torso.scale.y = THREE.MathUtils.lerp(1 + (moving ? 0 : Math.sin(time * 2) * 0.035), 0.98, sitBlend);
     torso.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? -0.12 : 0, 0.08, sitBlend);
 
-    leftLeg.position.y = THREE.MathUtils.lerp(0.67, 0.45, sitBlend);
-    rightLeg.position.y = THREE.MathUtils.lerp(0.67, 0.45, sitBlend);
+    leftLeg.position.y = THREE.MathUtils.lerp(0.67, 0.59, sitBlend);
+    rightLeg.position.y = THREE.MathUtils.lerp(0.67, 0.59, sitBlend);
     const legPose = pose === 'jump' ? -0.45 : swing;
-    leftLeg.rotation.x = THREE.MathUtils.lerp(legPose, -1.12, sitBlend);
-    rightLeg.rotation.x = THREE.MathUtils.lerp(-legPose, -1.12, sitBlend);
+    leftLeg.rotation.x = THREE.MathUtils.lerp(legPose, -0.9, sitBlend);
+    rightLeg.rotation.x = THREE.MathUtils.lerp(-legPose, -0.9, sitBlend);
+    leftKnee.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? 0.35 : 0, 0.9, sitBlend);
+    rightKnee.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? 0.35 : 0, 0.9, sitBlend);
 
     const idleArmSwing = Math.sin(time * 1.5) * 0.12;
     const jumpArmPose = pose === 'jump' ? 0.65 : 0;
-    leftArm.rotation.x = THREE.MathUtils.lerp(moving ? -swing * 0.7 : idleArmSwing + jumpArmPose, -0.78, sitBlend);
-    rightArm.rotation.x = THREE.MathUtils.lerp(moving ? swing * 0.7 : idleArmSwing + jumpArmPose, -0.78, sitBlend);
+    leftArm.position.y = THREE.MathUtils.lerp(1.32, 0.99, sitBlend);
+    rightArm.position.y = THREE.MathUtils.lerp(1.32, 0.99, sitBlend);
+    leftArm.rotation.x = THREE.MathUtils.lerp(moving ? -swing * 0.7 : idleArmSwing + jumpArmPose, -0.45, sitBlend);
+    rightArm.rotation.x = THREE.MathUtils.lerp(moving ? swing * 0.7 : idleArmSwing + jumpArmPose, -0.45, sitBlend);
 
+    head.position.y = THREE.MathUtils.lerp(1.53, 1.24, sitBlend);
+    head.rotation.x = THREE.MathUtils.lerp(0, 0.06, sitBlend);
     head.rotation.z = Math.sin(time * 0.8) * 0.04 * (1 - sitBlend);
     model.rotation.z = Math.sin(time * 1.2) * 0.025 * (1 - sitBlend);
 
@@ -1161,6 +1196,7 @@ function createDogAnimator(model) {
 registerAvatarType('human', {
   label: '사람',
   height: 2.7,
+  sitHeight: 2.4,
   matches: (model) => Boolean(model.getObjectByName('avatar-torso')),
   create: () => humanAvatarTemplate.clone(true),
   createAnimator: createHumanoidAnimator
@@ -2035,9 +2071,22 @@ function animate() {
   if (isJumping) playerPose = 'jump';
   if (isSitting) playerPose = 'sit';
   activeAvatarController.update(playerPose, clock.elapsedTime, delta, isRunning);
+  const avatarModel = activeAvatarController.model;
+  const headAnchor = avatarModel.getObjectByName('avatar-head-group')
+    || avatarModel.getObjectByName('dog-head');
+  const torso = avatarModel.getObjectByName('avatar-torso');
   sitButton.dataset.avatarType = activeAvatarController.type;
   sitButton.dataset.pose = playerPose;
-  sitButton.dataset.sitProgress = (activeAvatarController.model.userData.poseProgress ?? 0).toFixed(3);
+  sitButton.dataset.sitProgress = (avatarModel.userData.poseProgress ?? 0).toFixed(3);
+  sitButton.dataset.headY = (avatarModel.position.y + (headAnchor?.position.y ?? 0)).toFixed(3);
+  if (torso) {
+    const torsoHalfHeight = torso.geometry.parameters.radius + torso.geometry.parameters.height / 2;
+    sitButton.dataset.torsoBottomY = (
+      avatarModel.position.y + torso.position.y - torsoHalfHeight * torso.scale.y
+    ).toFixed(3);
+  } else {
+    delete sitButton.dataset.torsoBottomY;
+  }
 
   Object.values(remoteAvatarControllers).forEach((avatar) => {
     avatar.update(avatar.pose || 'idle', clock.elapsedTime, delta);
