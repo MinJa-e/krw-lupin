@@ -1028,24 +1028,40 @@ lunchDog.traverse((obj) => {
 scene.add(lunchDog);
 
 
-// 아바타는 외형 팩토리와 포즈 애니메이터를 조합하는 구조입니다.
-// 새 캐릭터는 registerAvatarType에 create/animate를 등록하면 이동·동기화·앉기 입력을 공유합니다.
+// 아바타는 외형 판별기와 포즈 애니메이터를 조합합니다.
+// 새 모델은 userData.avatarType을 지정하거나 matches로 판별 규칙을 등록하면 전용 포즈가 자동 적용됩니다.
 const avatarRegistry = new Map();
 
 function registerAvatarType(type, definition) {
-  if (!type || typeof definition?.create !== 'function' || typeof definition?.animate !== 'function') {
-    throw new Error(`아바타 '${type}'에는 create와 animate 구현이 필요합니다.`);
+  if (!type || typeof definition?.create !== 'function' || typeof definition?.createAnimator !== 'function') {
+    throw new Error(`아바타 '${type}'에는 create와 createAnimator 구현이 필요합니다.`);
   }
 
   avatarRegistry.set(type, definition);
 }
 
-function createAvatarController(type = 'human') {
-  const selectedType = avatarRegistry.has(type) ? type : 'human';
+function detectAvatarType(model) {
+  const declaredType = model.userData?.avatarType;
+  if (avatarRegistry.has(declaredType)) return declaredType;
+
+  for (const [type, definition] of avatarRegistry) {
+    if (typeof definition.matches === 'function' && definition.matches(model)) {
+      return type;
+    }
+  }
+
+  return 'human';
+}
+
+function createAvatarController(typeOrModel = 'human') {
+  const suppliedModel = typeOrModel?.isObject3D ? typeOrModel : null;
+  const selectedType = suppliedModel
+    ? detectAvatarType(suppliedModel)
+    : avatarRegistry.has(typeOrModel) ? typeOrModel : 'human';
   const definition = avatarRegistry.get(selectedType);
-  const model = definition.create();
-  model.position.set(0, 0, 0);
-  model.rotation.set(0, 0, 0);
+  const model = suppliedModel || definition.create();
+  model.userData.avatarType = selectedType;
+  const updateAnimation = definition.createAnimator(model);
 
   return {
     type: selectedType,
@@ -1055,7 +1071,7 @@ function createAvatarController(type = 'human') {
     pose: 'idle',
     update(pose, time, delta, running = false) {
       this.pose = pose;
-      definition.animate(model, { pose, time, delta, running });
+      updateAnimation({ pose, time, delta, running });
     }
   };
 }
@@ -1143,8 +1159,9 @@ function createDogAnimator(model) {
 registerAvatarType('human', {
   label: '사람',
   height: 2.7,
+  matches: (model) => Boolean(model.getObjectByName('avatar-torso')),
   create: () => humanAvatarTemplate.clone(true),
-  animate: createHumanoidAnimator
+  createAnimator: createHumanoidAnimator
 });
 
 const dogAvatarTemplate = lunchDog.clone(true);
@@ -1152,13 +1169,27 @@ dogAvatarTemplate.position.set(0, 0, 0);
 registerAvatarType('dog', {
   label: '강아지',
   height: 1.95,
+  matches: (model) => Boolean(model.getObjectByName('dog-body') && model.getObjectByName('dog-head')),
   create: () => dogAvatarTemplate.clone(true),
-  animate: createDogAnimator
+  createAnimator: createDogAnimator
 });
 
-let activeAvatarController = createAvatarController('human');
+let activeAvatarController = createAvatarController(humanAvatarTemplate.clone(true));
 player.add(activeAvatarController.model);
 scene.add(player);
+
+// 외부 모델이 들어오면 등록된 matches/메타데이터로 타입을 판별해 해당 애니메이터를 붙입니다.
+function setPlayerAvatarModel(model) {
+  if (!model?.isObject3D) {
+    throw new TypeError('플레이어 아바타는 Three.js Object3D여야 합니다.');
+  }
+
+  player.remove(activeAvatarController.model);
+  activeAvatarController = createAvatarController(model);
+  player.add(activeAvatarController.model);
+
+  return activeAvatarController.type;
+}
 
 let isSitting = false;
 
@@ -1180,7 +1211,6 @@ avatarControlsStyle.textContent = `
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
     backdrop-filter: blur(8px);
   }
-  #avatar-controls select,
   #avatar-controls button {
     min-height: 42px;
     border: 0;
@@ -1188,21 +1218,19 @@ avatarControlsStyle.textContent = `
     padding: 0 14px;
     font: 600 14px sans-serif;
   }
-  #avatar-controls select {
-    color: #20363b;
-    background: #fff;
-  }
   #avatar-sit-button {
     color: #20363b;
     background: #ffe0a6;
     cursor: pointer;
     touch-action: manipulation;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    pointer-events: auto;
   }
   #avatar-sit-button:active { transform: scale(0.96); }
   @media (pointer: coarse) {
     #avatar-controls { bottom: 14px; gap: 6px; padding: 6px; }
-    #avatar-controls select,
-    #avatar-controls button { min-height: 40px; padding: 0 11px; font-size: 13px; }
+    #avatar-controls button { min-height: 44px; padding: 0 16px; font-size: 14px; }
   }
 `;
 document.head.appendChild(avatarControlsStyle);
@@ -1210,49 +1238,35 @@ document.head.appendChild(avatarControlsStyle);
 const avatarControls = document.createElement('div');
 avatarControls.id = 'avatar-controls';
 
-const avatarSelect = document.createElement('select');
-avatarSelect.id = 'avatar-select';
-avatarSelect.setAttribute('aria-label', '캐릭터 종류');
-avatarRegistry.forEach((definition, type) => {
-  const option = document.createElement('option');
-  option.value = type;
-  option.textContent = definition.label;
-  avatarSelect.appendChild(option);
-});
-
 const sitButton = document.createElement('button');
 sitButton.id = 'avatar-sit-button';
 sitButton.type = 'button';
+sitButton.setAttribute('aria-label', '앉기');
 sitButton.textContent = '🪑 앉기';
 sitButton.setAttribute('aria-pressed', 'false');
 
-avatarControls.append(avatarSelect, sitButton);
+avatarControls.appendChild(sitButton);
 document.body.appendChild(avatarControls);
 
-function setActiveAvatar(type) {
-  if (!avatarRegistry.has(type) || type === activeAvatarController.type) return;
-
-  player.remove(activeAvatarController.model);
-  activeAvatarController = createAvatarController(type);
-  player.add(activeAvatarController.model);
-  avatarSelect.value = type;
-}
-
 function setSitting(sitting) {
-  if (sitting && (isJumping || player.position.y > 0.05)) return;
-
   isSitting = sitting;
   if (isSitting) {
+    player.position.y = 0;
+    verticalVelocity = 0;
+    isJumping = false;
     isMovingToTarget = false;
     Object.keys(keys).forEach((key) => { keys[key] = false; });
   }
 
   sitButton.textContent = isSitting ? '🧍 일어서기' : '🪑 앉기';
+  sitButton.setAttribute('aria-label', isSitting ? '일어서기' : '앉기');
   sitButton.setAttribute('aria-pressed', String(isSitting));
 }
 
-avatarSelect.addEventListener('change', () => setActiveAvatar(avatarSelect.value));
-sitButton.addEventListener('click', () => setSitting(!isSitting));
+sitButton.addEventListener('click', (event) => {
+  event.preventDefault();
+  setSitting(!isSitting);
+});
 
 
 
