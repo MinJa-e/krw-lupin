@@ -15,6 +15,7 @@ test('앱이 오류 없이 시작하고 앉기 버튼이 자세 상태를 토글
     expect(hasE2EDiagnostics).toBe(true);
   }
   await expect.poll(() => sitButton.getAttribute('data-avatar-type')).toBe('human');
+  await expect.poll(() => sitButton.getAttribute('data-companion-avatar-type')).toBe('dog');
   await expect.poll(async () => Number(await sitButton.getAttribute('data-sit-progress'))).toBeLessThan(0.1);
   const standingHeadY = Number(await sitButton.getAttribute('data-head-y'));
   expect(standingHeadY).toBeGreaterThan(1.45);

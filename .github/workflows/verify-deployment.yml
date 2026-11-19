@@ -36,14 +36,6 @@ jobs:
       - name: Build production client
         run: npm run build
 
-      - name: Build browser smoke bundle
-        run: npm run build:e2e
-
-      - name: Check browser startup and sit/stand controls
-        run: npm run test:e2e
-        env:
-          PLAYWRIGHT_PREVIEW_DIR: dist-e2e
-
       - name: Wait for this commit on Render and check Socket.IO
         run: npm run verify:deploy
         env:

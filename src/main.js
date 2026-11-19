@@ -1285,6 +1285,7 @@ sitButton.setAttribute('aria-pressed', 'false');
 
 avatarControls.appendChild(sitButton);
 document.body.appendChild(avatarControls);
+sitButton.dataset.companionAvatarType = detectAvatarType(lunchDog);
 
 function setSitting(sitting) {
   isSitting = sitting;
