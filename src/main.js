@@ -147,8 +147,9 @@ socket.on('disconnect', () => {
 
 // 장면 설정
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x9bc8e8);
-scene.fog = new THREE.Fog(0x9bc8e8, 25, 100);
+const skyColor = 0x9ccfe6;
+scene.background = new THREE.Color(skyColor);
+scene.fog = new THREE.Fog(skyColor, 55, 180);
 
 const camera = new THREE.PerspectiveCamera(
   65,
@@ -165,26 +166,357 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.querySelector('#app').appendChild(renderer.domElement);
 
 // 조명
-scene.add(new THREE.HemisphereLight(0xffffff, 0x6d805c, 2));
+scene.add(new THREE.HemisphereLight(0xe5f6ff, 0x84704f, 1.8));
 
 const sun = new THREE.DirectionalLight(0xffffff, 3);
-sun.position.set(10, 20, 10);
+sun.position.set(-20, 25, 10);
 sun.castShadow = true;
 scene.add(sun);
 
-// 바닥
+// 해변 마을 지형
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(200, 200),
-  new THREE.MeshStandardMaterial({ color: 0x75a96b })
+  new THREE.MeshStandardMaterial({ color: 0xd8c493, roughness: 1 })
 );
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// 바닥 격자
-const grid = new THREE.GridHelper(200, 100, 0x557d50, 0x668d60);
-grid.position.y = 0.02;
-scene.add(grid);
+// 마을을 관통해 해변으로 이어지는 돌길
+const road = new THREE.Mesh(
+  new THREE.PlaneGeometry(4.8, 48),
+  new THREE.MeshStandardMaterial({ color: 0xb4aa91, roughness: 1 })
+);
+road.rotation.x = -Math.PI / 2;
+road.position.set(0, 0.025, -2);
+road.receiveShadow = true;
+scene.add(road);
+
+const crossRoad = new THREE.Mesh(
+  new THREE.PlaneGeometry(38, 3.4),
+  new THREE.MeshStandardMaterial({ color: 0xc0b397, roughness: 1 })
+);
+crossRoad.rotation.x = -Math.PI / 2;
+crossRoad.position.set(0, 0.026, 9);
+crossRoad.receiveShadow = true;
+scene.add(crossRoad);
+
+// 모래 해변과 얕은 물, 먼 바다
+const beach = new THREE.Mesh(
+  new THREE.PlaneGeometry(200, 13),
+  new THREE.MeshStandardMaterial({ color: 0xe7d19a, roughness: 1 })
+);
+beach.rotation.x = -Math.PI / 2;
+beach.position.set(0, 0.012, -20);
+beach.receiveShadow = true;
+scene.add(beach);
+
+const shallowWater = new THREE.Mesh(
+  new THREE.PlaneGeometry(200, 8),
+  new THREE.MeshStandardMaterial({ color: 0x75c8c8, roughness: 0.45, metalness: 0.02 })
+);
+shallowWater.rotation.x = -Math.PI / 2;
+shallowWater.position.set(0, 0.018, -31);
+scene.add(shallowWater);
+
+const ocean = new THREE.Mesh(
+  new THREE.PlaneGeometry(200, 162),
+  new THREE.MeshStandardMaterial({ color: 0x328fa9, roughness: 0.35, metalness: 0.05 })
+);
+ocean.rotation.x = -Math.PI / 2;
+ocean.position.set(0, 0.014, -116);
+scene.add(ocean);
+
+// 해안가 낮은 돌제방
+const seawall = new THREE.Mesh(
+  new THREE.BoxGeometry(200, 0.42, 0.65),
+  new THREE.MeshStandardMaterial({ color: 0x8e9b91, roughness: 1 })
+);
+seawall.position.set(0, 0.21, -27);
+seawall.receiveShadow = true;
+scene.add(seawall);
+
+// 골목을 향해 문이 나 있는 작은 일본식 목조 가옥
+function createJapaneseHouse(x, z, facing, wallColor) {
+  const house = new THREE.Group();
+  const width = 5.4;
+  const depth = 4.7;
+  const wallHeight = 3.1;
+  const roofRise = 1.45;
+  const wallMaterial = new THREE.MeshStandardMaterial({ color: wallColor, roughness: 0.95 });
+  const darkWood = new THREE.MeshStandardMaterial({ color: 0x604936, roughness: 1 });
+  const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x42565b, roughness: 0.9 });
+  const windowMaterial = new THREE.MeshStandardMaterial({ color: 0x4b6870, roughness: 0.65 });
+  const paperMaterial = new THREE.MeshStandardMaterial({ color: 0xf4e5c4, roughness: 1 });
+  const lanternMaterial = new THREE.MeshStandardMaterial({
+    color: 0xe8a45c,
+    emissive: 0x6f2c08,
+    emissiveIntensity: 0.25
+  });
+
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(width, wallHeight, depth),
+    wallMaterial
+  );
+  body.position.y = wallHeight / 2;
+  body.castShadow = true;
+  body.receiveShadow = true;
+  house.add(body);
+
+  const gableShape = new THREE.Shape();
+  gableShape.moveTo(-width / 2, 0);
+  gableShape.lineTo(width / 2, 0);
+  gableShape.lineTo(0, roofRise);
+  gableShape.closePath();
+
+  const frontGable = new THREE.Mesh(
+    new THREE.ShapeGeometry(gableShape),
+    wallMaterial
+  );
+  frontGable.position.set(0, wallHeight, depth / 2 + 0.012);
+  house.add(frontGable);
+
+  const backGable = frontGable.clone();
+  backGable.position.z = -depth / 2 - 0.012;
+  backGable.rotation.y = Math.PI;
+  house.add(backGable);
+
+  const roofAngle = Math.atan2(roofRise, width / 2 + 0.55);
+  const roofLength = Math.hypot(width / 2 + 0.55, roofRise);
+  const leftRoof = new THREE.Mesh(
+    new THREE.BoxGeometry(roofLength, 0.2, depth + 0.8),
+    roofMaterial
+  );
+  leftRoof.position.set(-width / 4, wallHeight + roofRise / 2, 0);
+  leftRoof.rotation.z = roofAngle;
+  leftRoof.castShadow = true;
+  house.add(leftRoof);
+
+  const rightRoof = leftRoof.clone();
+  rightRoof.position.x = width / 4;
+  rightRoof.rotation.z = -roofAngle;
+  house.add(rightRoof);
+
+  const ridge = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.13, 0.13, depth + 1, 8),
+    darkWood
+  );
+  ridge.rotation.x = Math.PI / 2;
+  ridge.position.y = wallHeight + roofRise;
+  house.add(ridge);
+
+  const door = new THREE.Mesh(
+    new THREE.BoxGeometry(0.86, 1.8, 0.11),
+    darkWood
+  );
+  door.position.set(0, 0.9, depth / 2 + 0.065);
+  house.add(door);
+
+  [-1.55, 1.55].forEach((windowX) => {
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(1.08, 1.05, 0.1),
+      darkWood
+    );
+    frame.position.set(windowX, 1.85, depth / 2 + 0.07);
+    house.add(frame);
+
+    const windowPane = new THREE.Mesh(
+      new THREE.BoxGeometry(0.82, 0.78, 0.035),
+      windowMaterial
+    );
+    windowPane.position.set(windowX, 1.85, depth / 2 + 0.13);
+    house.add(windowPane);
+
+    const divider = new THREE.Mesh(
+      new THREE.BoxGeometry(0.055, 0.82, 0.045),
+      paperMaterial
+    );
+    divider.position.set(windowX, 1.85, depth / 2 + 0.155);
+    house.add(divider);
+  });
+
+  const sign = new THREE.Mesh(
+    new THREE.BoxGeometry(1.75, 0.45, 0.15),
+    paperMaterial
+  );
+  sign.position.set(0, 2.72, depth / 2 + 0.08);
+  house.add(sign);
+
+  const noren = new THREE.Mesh(
+    new THREE.BoxGeometry(1.25, 0.38, 0.12),
+    new THREE.MeshStandardMaterial({ color: 0x9c5547, roughness: 1 })
+  );
+  noren.position.set(0, 2.38, depth / 2 + 0.1);
+  house.add(noren);
+
+  const lantern = new THREE.Mesh(
+    new THREE.BoxGeometry(0.42, 0.62, 0.42),
+    lanternMaterial
+  );
+  lantern.position.set(1.18, 2.45, depth / 2 + 0.24);
+  house.add(lantern);
+
+  const lanternCap = new THREE.Mesh(
+    new THREE.BoxGeometry(0.58, 0.1, 0.58),
+    darkWood
+  );
+  lanternCap.position.set(1.18, 2.82, depth / 2 + 0.24);
+  house.add(lanternCap);
+
+  house.position.set(x, 0, z);
+  house.rotation.y = facing;
+  house.traverse((object) => {
+    if (object.isMesh) {
+      object.castShadow = true;
+      object.receiveShadow = true;
+    }
+  });
+  scene.add(house);
+}
+
+[
+  [-10, -6, Math.PI / 2, 0xe3d4b7],
+  [10, -6, -Math.PI / 2, 0xd6c5a6],
+  [-11, 2, Math.PI / 2, 0xe9dfc9],
+  [11, 2, -Math.PI / 2, 0xdcc9a9],
+  [-10, 17, Math.PI / 2, 0xd8c8aa],
+  [10, 17, -Math.PI / 2, 0xe5d8bd],
+  [-13, 29, Math.PI / 2, 0xe0d1b3],
+  [13, 29, -Math.PI / 2, 0xd6c5a7]
+].forEach(([x, z, facing, wallColor]) => {
+  createJapaneseHouse(x, z, facing, wallColor);
+});
+
+// 마을에서 해변으로 이어지는 붉은 도리이
+const torii = new THREE.Group();
+const toriiMaterial = new THREE.MeshStandardMaterial({ color: 0xa94332, roughness: 0.85 });
+
+[-2.65, 2.65].forEach((x) => {
+  const pillar = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.17, 0.23, 3.5, 8),
+    toriiMaterial
+  );
+  pillar.position.set(x, 1.75, 0);
+  pillar.castShadow = true;
+  torii.add(pillar);
+});
+
+const toriiTop = new THREE.Mesh(
+  new THREE.BoxGeometry(7.1, 0.48, 0.62),
+  toriiMaterial
+);
+toriiTop.position.set(0, 3.55, 0);
+toriiTop.castShadow = true;
+torii.add(toriiTop);
+
+const toriiCrossbar = new THREE.Mesh(
+  new THREE.BoxGeometry(5.3, 0.24, 0.48),
+  toriiMaterial
+);
+toriiCrossbar.position.set(0, 2.72, 0);
+torii.add(toriiCrossbar);
+torii.position.z = -13.5;
+scene.add(torii);
+
+// 돌길을 밝히는 목재 등롱
+function createVillageLantern(x, z) {
+  const post = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ color: 0x604a35, roughness: 1 });
+  const paper = new THREE.MeshStandardMaterial({
+    color: 0xf0bd74,
+    emissive: 0x6a3210,
+    emissiveIntensity: 0.3
+  });
+
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.09, 0.13, 2.25, 8),
+    wood
+  );
+  pole.position.y = 1.125;
+  post.add(pole);
+
+  const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.68, 0.58), paper);
+  lamp.position.y = 2.62;
+  post.add(lamp);
+
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.12, 0.82), wood);
+  cap.position.y = 3.02;
+  post.add(cap);
+
+  post.position.set(x, 0, z);
+  post.traverse((object) => {
+    if (object.isMesh) object.castShadow = true;
+  });
+  scene.add(post);
+}
+
+[
+  [-4.1, -5], [4.1, -5],
+  [-4.1, 5], [4.1, 5],
+  [-4.1, 19], [4.1, 19]
+].forEach(([x, z]) => createVillageLantern(x, z));
+
+// 해변 파라솔
+function createBeachUmbrella(x, z, canopyColor) {
+  const umbrella = new THREE.Group();
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.045, 0.055, 1.75, 8),
+    new THREE.MeshStandardMaterial({ color: 0x76553a, roughness: 1 })
+  );
+  pole.position.y = 0.9;
+  umbrella.add(pole);
+
+  const canopy = new THREE.Mesh(
+    new THREE.ConeGeometry(1.45, 0.48, 8),
+    new THREE.MeshStandardMaterial({ color: canopyColor, roughness: 0.9 })
+  );
+  canopy.position.y = 1.88;
+  umbrella.add(canopy);
+
+  umbrella.position.set(x, 0, z);
+  umbrella.traverse((object) => {
+    if (object.isMesh) object.castShadow = true;
+  });
+  scene.add(umbrella);
+}
+
+createBeachUmbrella(-7, -20, 0xe98b6d);
+createBeachUmbrella(7, -20, 0x628fa0);
+
+// 해안 가까이에 정박한 작은 어선
+const fishingBoat = new THREE.Group();
+const boatWood = new THREE.MeshStandardMaterial({ color: 0x805a3a, roughness: 0.9 });
+const boatHull = new THREE.Mesh(
+  new THREE.BoxGeometry(4.6, 0.48, 1.45),
+  boatWood
+);
+boatHull.position.y = 0.27;
+fishingBoat.add(boatHull);
+
+const boatBow = new THREE.Mesh(
+  new THREE.ConeGeometry(0.73, 1.25, 4),
+  boatWood
+);
+boatBow.rotation.z = Math.PI / 2;
+boatBow.position.set(2.5, 0.27, 0);
+fishingBoat.add(boatBow);
+
+const boatCabin = new THREE.Mesh(
+  new THREE.BoxGeometry(1.25, 0.82, 1.05),
+  new THREE.MeshStandardMaterial({ color: 0xf0e5cf, roughness: 0.95 })
+);
+boatCabin.position.set(-0.65, 0.9, 0);
+fishingBoat.add(boatCabin);
+
+fishingBoat.position.set(10, 0, -40);
+fishingBoat.rotation.y = -0.12;
+fishingBoat.traverse((object) => {
+  if (object.isMesh) {
+    object.castShadow = true;
+    object.receiveShadow = true;
+  }
+});
+scene.add(fishingBoat);
 
 
 // 캐릭터 아바타
@@ -678,31 +1010,43 @@ function createTree(x, z) {
   const tree = new THREE.Group();
 
   const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.15, 0.2, 1.5, 8),
-    new THREE.MeshStandardMaterial({ color: 0x795438 })
+    new THREE.CylinderGeometry(0.16, 0.22, 1.8, 8),
+    new THREE.MeshStandardMaterial({ color: 0x76523a, roughness: 1 })
   );
   trunk.position.y = 0.75;
   tree.add(trunk);
 
-  const leaves = new THREE.Mesh(
-    new THREE.SphereGeometry(0.8, 12, 12),
-    new THREE.MeshStandardMaterial({ color: 0x267d43 })
-  );
-  leaves.position.y = 2;
-  tree.add(leaves);
+  const pineMaterial = new THREE.MeshStandardMaterial({ color: 0x356c5b, roughness: 1 });
+  [
+    { radius: 1.35, height: 1.65, y: 1.75 },
+    { radius: 1.05, height: 1.55, y: 2.55 },
+    { radius: 0.72, height: 1.35, y: 3.3 }
+  ].forEach(({ radius, height, y }) => {
+    const branchLayer = new THREE.Mesh(
+      new THREE.ConeGeometry(radius, height, 7),
+      pineMaterial
+    );
+    branchLayer.position.y = y;
+    branchLayer.castShadow = true;
+    tree.add(branchLayer);
+  });
 
   tree.position.set(x, 0, z);
   tree.traverse((obj) => {
-    if (obj.isMesh) obj.castShadow = true;
+    if (obj.isMesh) {
+      obj.castShadow = true;
+      obj.receiveShadow = true;
+    }
   });
 
   scene.add(tree);
 }
 
 [
-  [-5, -5], [5, -7], [-8, 3], [8, 4],
-  [-12, -10], [12, -12], [0, -15],
-  [-15, 8], [15, 9]
+  [-24, -6], [24, -5],
+  [-25, 5], [25, 6],
+  [-24, 17], [24, 18],
+  [-27, 30], [27, 31]
 ].forEach(([x, z]) => createTree(x, z));
 
 // 키보드 입력
@@ -888,7 +1232,11 @@ function setTouchDestination(x, y) {
   const destination = new THREE.Vector3();
 
   if (touchRaycaster.ray.intersectPlane(groundPlane, destination)) {
-    moveTarget.set(destination.x, 0, destination.z);
+    moveTarget.set(
+      THREE.MathUtils.clamp(destination.x, -44, 44),
+      0,
+      THREE.MathUtils.clamp(destination.z, -26, 44)
+    );
     isMovingToTarget = true;
   }
 }
@@ -1210,6 +1558,10 @@ function animate() {
     // 머리 움직임
     player.children[2].rotation.z = Math.sin(idleTime * 0.8) * 0.04;
   }
+
+  // 마을과 해변 안에서만 이동하고 바다로 들어가지 않도록 경계 설정
+  player.position.x = THREE.MathUtils.clamp(player.position.x, -44, 44);
+  player.position.z = THREE.MathUtils.clamp(player.position.z, -26, 44);
 
   // 플레이어와 강아지 사이의 거리 계산
   const dogDistance = Math.sqrt(
