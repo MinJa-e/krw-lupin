@@ -880,7 +880,7 @@ function createLeg(x) {
   humanAvatarTemplate.add(hip);
 
   const thigh = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.14, 0.12, 4, 8),
+    new THREE.CapsuleGeometry(0.18, 0.12, 4, 8),
     pantsMat
   );
   thigh.position.y = -0.18;
@@ -893,7 +893,7 @@ function createLeg(x) {
   hip.add(knee);
 
   const shin = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.12, 0.08, 4, 8),
+    new THREE.CapsuleGeometry(0.16, 0.08, 4, 8),
     pantsMat
   );
   shin.position.y = -0.12;
@@ -904,7 +904,7 @@ function createLeg(x) {
   foot.position.set(0, -0.21, 0.12);
   foot.name = `avatar-${side}-foot`;
   knee.add(foot);
-  makeSphere(foot, 0.15, [0, 0, 0], shoeMat, [1, 0.65, 1.5]);
+  makeSphere(foot, 0.16, [0, 0, 0], shoeMat, [1, 0.65, 1.5]);
 
   return hip;
 }
@@ -1137,13 +1137,17 @@ function createHumanoidAnimator(model) {
     torso.scale.y = THREE.MathUtils.lerp(1 + (moving ? 0 : Math.sin(time * 2) * 0.035), 0.98, sitBlend);
     torso.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? -0.12 : 0, 0.08, sitBlend);
 
-    leftLeg.position.y = THREE.MathUtils.lerp(0.67, 0.11, sitBlend);
-    rightLeg.position.y = THREE.MathUtils.lerp(0.67, 0.11, sitBlend);
+    leftLeg.position.x = THREE.MathUtils.lerp(-0.19, -0.24, sitBlend);
+    rightLeg.position.x = THREE.MathUtils.lerp(0.19, 0.24, sitBlend);
+    leftLeg.position.y = THREE.MathUtils.lerp(0.67, 0.31, sitBlend);
+    rightLeg.position.y = THREE.MathUtils.lerp(0.67, 0.31, sitBlend);
     const legPose = pose === 'jump' ? -0.45 : swing;
     leftLeg.rotation.x = THREE.MathUtils.lerp(legPose, -1.4, sitBlend);
     rightLeg.rotation.x = THREE.MathUtils.lerp(-legPose, -1.4, sitBlend);
     leftKnee.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? 0.35 : 0, 0, sitBlend);
     rightKnee.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? 0.35 : 0, 0, sitBlend);
+    leftFoot.position.z = THREE.MathUtils.lerp(0.12, -0.075, sitBlend);
+    rightFoot.position.z = THREE.MathUtils.lerp(0.12, -0.075, sitBlend);
     leftFoot.rotation.x = THREE.MathUtils.lerp(0, 1.4, sitBlend);
     rightFoot.rotation.x = THREE.MathUtils.lerp(0, 1.4, sitBlend);
 
