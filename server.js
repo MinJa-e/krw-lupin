@@ -1,7 +1,24 @@
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
-const httpServer = createServer();
+const httpServer = createServer((request, response) => {
+  const requestPath = request.url?.split('?')[0];
+  if (requestPath !== '/health' && requestPath !== '/healthz') return;
+
+  const commit = process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || null;
+  const body = JSON.stringify({
+    status: 'ok',
+    service: 'krw-lupin',
+    commit
+  });
+
+  response.writeHead(200, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Content-Length': Buffer.byteLength(body)
+  });
+  response.end(body);
+});
 
 const io = new Server(httpServer, {
   cors: {

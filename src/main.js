@@ -1120,6 +1120,7 @@ function createHumanoidAnimator(model) {
     const eyeOpen = blinkPhase < 0.16 ? Math.max(0.1, Math.abs(1 - blinkPhase / 0.08)) : 1;
     leftEye.scale.y = eyeOpen;
     rightEye.scale.y = eyeOpen;
+    model.userData.poseProgress = sitBlend;
   };
 }
 
@@ -1153,6 +1154,7 @@ function createDogAnimator(model) {
     legs.hindRight.rotation.x = THREE.MathUtils.lerp(gait, -1.05, sitBlend);
     legs.frontLeft.position.y = THREE.MathUtils.lerp(0.3, 0.26, sitBlend);
     legs.frontRight.position.y = THREE.MathUtils.lerp(0.3, 0.26, sitBlend);
+    model.userData.poseProgress = sitBlend;
   };
 }
 
@@ -1267,6 +1269,17 @@ sitButton.addEventListener('click', (event) => {
   event.preventDefault();
   setSitting(!isSitting);
 });
+
+if (import.meta.env.MODE === 'e2e') {
+  window.__krwLupinE2E = {
+    getAvatarState: () => ({
+      type: activeAvatarController.type,
+      pose: activeAvatarController.pose,
+      sitProgress: activeAvatarController.model.userData.poseProgress ?? 0
+    }),
+    detectCompanionType: () => detectAvatarType(lunchDog)
+  };
+}
 
 
 
