@@ -2035,6 +2035,9 @@ function animate() {
   if (isJumping) playerPose = 'jump';
   if (isSitting) playerPose = 'sit';
   activeAvatarController.update(playerPose, clock.elapsedTime, delta, isRunning);
+  sitButton.dataset.avatarType = activeAvatarController.type;
+  sitButton.dataset.pose = playerPose;
+  sitButton.dataset.sitProgress = (activeAvatarController.model.userData.poseProgress ?? 0).toFixed(3);
 
   Object.values(remoteAvatarControllers).forEach((avatar) => {
     avatar.update(avatar.pose || 'idle', clock.elapsedTime, delta);
