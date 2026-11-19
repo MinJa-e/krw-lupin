@@ -31,6 +31,10 @@ test('앱이 오류 없이 시작하고 앉기 버튼이 자세 상태를 토글
   await expect.poll(async () => Number(await sitButton.getAttribute('data-head-y'))).toBeLessThan(standingHeadY - 0.25);
   await expect.poll(async () => Number(await sitButton.getAttribute('data-torso-bottom-y'))).toBeLessThan(0.1);
   expect(Number(await sitButton.getAttribute('data-torso-bottom-y'))).toBeGreaterThan(-0.05);
+  for (const side of ['left', 'right']) {
+    await expect.poll(async () => Math.abs(Number(await sitButton.getAttribute(`data-${side}-knee-angle`)))).toBeLessThan(0.05);
+    await expect.poll(async () => Number(await sitButton.getAttribute(`data-${side}-leg-angle`))).toBeLessThan(-1.3);
+  }
   if (hasE2EDiagnostics) {
     await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAvatarState().pose)).toBe('sit');
   }

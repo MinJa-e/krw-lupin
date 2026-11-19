@@ -900,7 +900,11 @@ function createLeg(x) {
   shin.castShadow = true;
   knee.add(shin);
 
-  makeSphere(knee, 0.15, [0, -0.21, 0.12], shoeMat, [1, 0.65, 1.5]);
+  const foot = new THREE.Group();
+  foot.position.set(0, -0.21, 0.12);
+  foot.name = `avatar-${side}-foot`;
+  knee.add(foot);
+  makeSphere(foot, 0.15, [0, 0, 0], shoeMat, [1, 0.65, 1.5]);
 
   return hip;
 }
@@ -1111,6 +1115,8 @@ function createHumanoidAnimator(model) {
   const rightLeg = model.getObjectByName('avatar-right-leg');
   const leftKnee = model.getObjectByName('avatar-left-knee');
   const rightKnee = model.getObjectByName('avatar-right-knee');
+  const leftFoot = model.getObjectByName('avatar-left-foot');
+  const rightFoot = model.getObjectByName('avatar-right-foot');
   const leftEye = model.getObjectByName('avatar-left-eye');
   const rightEye = model.getObjectByName('avatar-right-eye');
   let sitBlend = 0;
@@ -1131,13 +1137,15 @@ function createHumanoidAnimator(model) {
     torso.scale.y = THREE.MathUtils.lerp(1 + (moving ? 0 : Math.sin(time * 2) * 0.035), 0.98, sitBlend);
     torso.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? -0.12 : 0, 0.08, sitBlend);
 
-    leftLeg.position.y = THREE.MathUtils.lerp(0.67, 0.59, sitBlend);
-    rightLeg.position.y = THREE.MathUtils.lerp(0.67, 0.59, sitBlend);
+    leftLeg.position.y = THREE.MathUtils.lerp(0.67, 0.11, sitBlend);
+    rightLeg.position.y = THREE.MathUtils.lerp(0.67, 0.11, sitBlend);
     const legPose = pose === 'jump' ? -0.45 : swing;
-    leftLeg.rotation.x = THREE.MathUtils.lerp(legPose, -0.9, sitBlend);
-    rightLeg.rotation.x = THREE.MathUtils.lerp(-legPose, -0.9, sitBlend);
-    leftKnee.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? 0.35 : 0, 0.9, sitBlend);
-    rightKnee.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? 0.35 : 0, 0.9, sitBlend);
+    leftLeg.rotation.x = THREE.MathUtils.lerp(legPose, -1.4, sitBlend);
+    rightLeg.rotation.x = THREE.MathUtils.lerp(-legPose, -1.4, sitBlend);
+    leftKnee.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? 0.35 : 0, 0, sitBlend);
+    rightKnee.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? 0.35 : 0, 0, sitBlend);
+    leftFoot.rotation.x = THREE.MathUtils.lerp(0, 1.4, sitBlend);
+    rightFoot.rotation.x = THREE.MathUtils.lerp(0, 1.4, sitBlend);
 
     const idleArmSwing = Math.sin(time * 1.5) * 0.12;
     const jumpArmPose = pose === 'jump' ? 0.65 : 0;
@@ -2076,6 +2084,10 @@ function animate() {
   const headAnchor = avatarModel.getObjectByName('avatar-head-group')
     || avatarModel.getObjectByName('dog-head');
   const torso = avatarModel.getObjectByName('avatar-torso');
+  const leftLeg = avatarModel.getObjectByName('avatar-left-leg');
+  const rightLeg = avatarModel.getObjectByName('avatar-right-leg');
+  const leftKnee = avatarModel.getObjectByName('avatar-left-knee');
+  const rightKnee = avatarModel.getObjectByName('avatar-right-knee');
   sitButton.dataset.avatarType = activeAvatarController.type;
   sitButton.dataset.pose = playerPose;
   sitButton.dataset.sitProgress = (avatarModel.userData.poseProgress ?? 0).toFixed(3);
@@ -2087,6 +2099,17 @@ function animate() {
     ).toFixed(3);
   } else {
     delete sitButton.dataset.torsoBottomY;
+  }
+  if (leftLeg && rightLeg && leftKnee && rightKnee) {
+    sitButton.dataset.leftLegAngle = leftLeg.rotation.x.toFixed(3);
+    sitButton.dataset.rightLegAngle = rightLeg.rotation.x.toFixed(3);
+    sitButton.dataset.leftKneeAngle = leftKnee.rotation.x.toFixed(3);
+    sitButton.dataset.rightKneeAngle = rightKnee.rotation.x.toFixed(3);
+  } else {
+    delete sitButton.dataset.leftLegAngle;
+    delete sitButton.dataset.rightLegAngle;
+    delete sitButton.dataset.leftKneeAngle;
+    delete sitButton.dataset.rightKneeAngle;
   }
 
   Object.values(remoteAvatarControllers).forEach((avatar) => {
