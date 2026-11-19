@@ -124,6 +124,16 @@ socket.on('playerMoved', (data) => {
 
   if (!remotePlayer) return;
 
+  const remoteAvatar = remoteAvatarControllers[data.id];
+  if (remoteAvatar && data.avatarType && remoteAvatar.type !== data.avatarType) {
+    setRemoteAvatarType(data.id, data.avatarType);
+  }
+
+  const currentAvatar = remoteAvatarControllers[data.id];
+  if (currentAvatar && data.pose) {
+    currentAvatar.pose = data.pose;
+  }
+
   remotePlayer.position.set(
     data.x,
     data.y,
@@ -765,8 +775,9 @@ fishingBoat.traverse((object) => {
 scene.add(fishingBoat);
 
 
-// 캐릭터 아바타
+// 플레이어 위치/방향을 담당하는 루트와 외형 모델을 분리합니다.
 const player = new THREE.Group();
+const humanAvatarTemplate = new THREE.Group();
 
 // 재질
 const skinMat = new THREE.MeshStandardMaterial({ color: 0xffd0ad });
@@ -798,39 +809,44 @@ const torso = new THREE.Mesh(
   shirtMat
 );
 torso.position.y = 1.05;
+torso.name = 'avatar-torso';
 torso.castShadow = true;
-player.add(torso);
+humanAvatarTemplate.add(torso);
 
 // 목
-makeSphere(player, 0.15, [0, 1.53, 0], skinMat);
+makeSphere(humanAvatarTemplate, 0.15, [0, 1.53, 0], skinMat);
 
 // 머리
-makeSphere(player, 0.42, [0, 1.92, 0], skinMat);
+const avatarHead = makeSphere(humanAvatarTemplate, 0.42, [0, 1.92, 0], skinMat);
+avatarHead.name = 'avatar-head';
 
 // 머리카락
-makeSphere(player, 0.43, [0, 2.12, -0.04], hairMat, [1.02, 0.72, 1]);
-makeSphere(player, 0.2, [0, 2.18, 0.34], hairMat, [1.5, 0.65, 0.65]);
+makeSphere(humanAvatarTemplate, 0.43, [0, 2.12, -0.04], hairMat, [1.02, 0.72, 1]);
+makeSphere(humanAvatarTemplate, 0.2, [0, 2.18, 0.34], hairMat, [1.5, 0.65, 0.65]);
 
 // 귀
-makeSphere(player, 0.11, [-0.4, 1.91, 0], skinMat);
-makeSphere(player, 0.11, [0.4, 1.91, 0], skinMat);
+makeSphere(humanAvatarTemplate, 0.11, [-0.4, 1.91, 0], skinMat);
+makeSphere(humanAvatarTemplate, 0.11, [0.4, 1.91, 0], skinMat);
 
 // 눈
-const leftEye = makeSphere(player, 0.045, [-0.15, 1.98, 0.365], eyeMat);
-const rightEye = makeSphere(player, 0.045, [0.15, 1.98, 0.365], eyeMat);
+const leftEye = makeSphere(humanAvatarTemplate, 0.045, [-0.15, 1.98, 0.365], eyeMat);
+const rightEye = makeSphere(humanAvatarTemplate, 0.045, [0.15, 1.98, 0.365], eyeMat);
+leftEye.name = 'avatar-left-eye';
+rightEye.name = 'avatar-right-eye';
 
 // 눈 반짝임
-makeSphere(player, 0.014, [-0.16, 2.0, 0.402], whiteMat);
-makeSphere(player, 0.014, [0.14, 2.0, 0.402], whiteMat);
+makeSphere(humanAvatarTemplate, 0.014, [-0.16, 2.0, 0.402], whiteMat);
+makeSphere(humanAvatarTemplate, 0.014, [0.14, 2.0, 0.402], whiteMat);
 
 // 입
-makeSphere(player, 0.035, [0, 1.84, 0.408], eyeMat, [1.3, 0.65, 0.5]);
+makeSphere(humanAvatarTemplate, 0.035, [0, 1.84, 0.408], eyeMat, [1.3, 0.65, 0.5]);
 
 // 팔 생성 함수
 function createArm(x) {
   const pivot = new THREE.Group();
   pivot.position.set(x, 1.32, 0);
-  player.add(pivot);
+  pivot.name = x < 0 ? 'avatar-left-arm' : 'avatar-right-arm';
+  humanAvatarTemplate.add(pivot);
 
   const arm = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.13, 0.42, 4, 8),
@@ -853,7 +869,8 @@ const rightArm = createArm(0.42);
 function createLeg(x) {
   const pivot = new THREE.Group();
   pivot.position.set(x, 0.67, 0);
-  player.add(pivot);
+  pivot.name = x < 0 ? 'avatar-left-leg' : 'avatar-right-leg';
+  humanAvatarTemplate.add(pivot);
 
   const leg = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.14, 0.4, 4, 8),
@@ -872,8 +889,7 @@ function createLeg(x) {
 const leftLeg = createLeg(-0.19);
 const rightLeg = createLeg(0.19);
 
-// 장면에 캐릭터 추가
-scene.add(player);
+// 외형 템플릿은 모델 등록소에서 복제해 플레이어와 원격 플레이어가 공유합니다.
 
 
 
@@ -906,6 +922,7 @@ const dogBody = new THREE.Mesh(
 );
 dogBody.scale.set(0.85, 0.8, 1.25);
 dogBody.position.set(0, 0.75, 0);
+dogBody.name = 'dog-body';
 lunchDog.add(dogBody);
 
 // 머리
@@ -914,6 +931,7 @@ const dogHead = new THREE.Mesh(
   furMaterial
 );
 dogHead.position.set(0, 1.4, 0.38);
+dogHead.name = 'dog-head';
 lunchDog.add(dogHead);
 
 // 귀 만들기
@@ -965,20 +983,25 @@ createDogEye(-0.17);
 createDogEye(0.17);
 
 // 다리
-function createDogLeg(x, z) {
+function createDogLeg(x, z, name) {
+  const pivot = new THREE.Group();
+  pivot.position.set(x, 0.3, z);
+  pivot.name = `dog-leg-${name}`;
+  lunchDog.add(pivot);
+
   const leg = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.12, 0.28, 4, 8),
     furMaterial
   );
 
-  leg.position.set(x, 0.3, z);
-  lunchDog.add(leg);
+  pivot.add(leg);
+  return pivot;
 }
 
-createDogLeg(-0.32, -0.35);
-createDogLeg(0.32, -0.35);
-createDogLeg(-0.32, 0.35);
-createDogLeg(0.32, 0.35);
+createDogLeg(-0.32, -0.35, 'hind-left');
+createDogLeg(0.32, -0.35, 'hind-right');
+createDogLeg(-0.32, 0.35, 'front-left');
+createDogLeg(0.32, 0.35, 'front-right');
 
 // 꼬리
 const dogTail = new THREE.Mesh(
@@ -987,6 +1010,7 @@ const dogTail = new THREE.Mesh(
 );
 dogTail.position.set(0, 0.95, -0.65);
 dogTail.rotation.x = -0.8;
+dogTail.name = 'dog-tail';
 lunchDog.add(dogTail);
 
 // 위치
@@ -1004,9 +1028,237 @@ lunchDog.traverse((obj) => {
 scene.add(lunchDog);
 
 
+// 아바타는 외형 팩토리와 포즈 애니메이터를 조합하는 구조입니다.
+// 새 캐릭터는 registerAvatarType에 create/animate를 등록하면 이동·동기화·앉기 입력을 공유합니다.
+const avatarRegistry = new Map();
+
+function registerAvatarType(type, definition) {
+  if (!type || typeof definition?.create !== 'function' || typeof definition?.animate !== 'function') {
+    throw new Error(`아바타 '${type}'에는 create와 animate 구현이 필요합니다.`);
+  }
+
+  avatarRegistry.set(type, definition);
+}
+
+function createAvatarController(type = 'human') {
+  const selectedType = avatarRegistry.has(type) ? type : 'human';
+  const definition = avatarRegistry.get(selectedType);
+  const model = definition.create();
+  model.position.set(0, 0, 0);
+  model.rotation.set(0, 0, 0);
+
+  return {
+    type: selectedType,
+    label: definition.label,
+    height: definition.height,
+    model,
+    pose: 'idle',
+    update(pose, time, delta, running = false) {
+      this.pose = pose;
+      definition.animate(model, { pose, time, delta, running });
+    }
+  };
+}
+
+function createHumanoidAnimator(model) {
+  const torso = model.getObjectByName('avatar-torso');
+  const head = model.getObjectByName('avatar-head');
+  const leftArm = model.getObjectByName('avatar-left-arm');
+  const rightArm = model.getObjectByName('avatar-right-arm');
+  const leftLeg = model.getObjectByName('avatar-left-leg');
+  const rightLeg = model.getObjectByName('avatar-right-leg');
+  const leftEye = model.getObjectByName('avatar-left-eye');
+  const rightEye = model.getObjectByName('avatar-right-eye');
+  let sitBlend = 0;
+
+  return ({ pose, time, delta, running }) => {
+    sitBlend = THREE.MathUtils.damp(sitBlend, pose === 'sit' ? 1 : 0, 9, delta);
+    const moving = pose === 'walk' || pose === 'run';
+    const isRunning = pose === 'run' || running;
+    const gaitSpeed = isRunning ? 16 : 10;
+    const gaitPower = isRunning ? 0.9 : 0.55;
+    const swing = moving ? Math.sin(time * gaitSpeed) * gaitPower : 0;
+    const breathing = moving
+      ? Math.abs(Math.sin(time * gaitSpeed * 2)) * (isRunning ? 0.09 : 0.035)
+      : Math.sin(time * 2) * 0.035;
+
+    torso.position.y = THREE.MathUtils.lerp(1.05 + breathing, 0.88, sitBlend);
+    torso.scale.y = THREE.MathUtils.lerp(1 + (moving ? 0 : Math.sin(time * 2) * 0.035), 0.98, sitBlend);
+    torso.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? -0.12 : 0, 0.08, sitBlend);
+
+    leftLeg.position.y = THREE.MathUtils.lerp(0.67, 0.45, sitBlend);
+    rightLeg.position.y = THREE.MathUtils.lerp(0.67, 0.45, sitBlend);
+    const legPose = pose === 'jump' ? -0.45 : swing;
+    leftLeg.rotation.x = THREE.MathUtils.lerp(legPose, -1.12, sitBlend);
+    rightLeg.rotation.x = THREE.MathUtils.lerp(-legPose, -1.12, sitBlend);
+
+    const idleArmSwing = Math.sin(time * 1.5) * 0.12;
+    const jumpArmPose = pose === 'jump' ? 0.65 : 0;
+    leftArm.rotation.x = THREE.MathUtils.lerp(moving ? -swing * 0.7 : idleArmSwing + jumpArmPose, -0.78, sitBlend);
+    rightArm.rotation.x = THREE.MathUtils.lerp(moving ? swing * 0.7 : idleArmSwing + jumpArmPose, -0.78, sitBlend);
+
+    head.rotation.z = Math.sin(time * 0.8) * 0.04 * (1 - sitBlend);
+    model.rotation.z = Math.sin(time * 1.2) * 0.025 * (1 - sitBlend);
+
+    const blinkPhase = time % 4.2;
+    const eyeOpen = blinkPhase < 0.16 ? Math.max(0.1, Math.abs(1 - blinkPhase / 0.08)) : 1;
+    leftEye.scale.y = eyeOpen;
+    rightEye.scale.y = eyeOpen;
+  };
+}
+
+function createDogAnimator(model) {
+  const body = model.getObjectByName('dog-body');
+  const head = model.getObjectByName('dog-head');
+  const tail = model.getObjectByName('dog-tail');
+  const legs = {
+    hindLeft: model.getObjectByName('dog-leg-hind-left'),
+    hindRight: model.getObjectByName('dog-leg-hind-right'),
+    frontLeft: model.getObjectByName('dog-leg-front-left'),
+    frontRight: model.getObjectByName('dog-leg-front-right')
+  };
+  let sitBlend = 0;
+
+  return ({ pose, time, delta }) => {
+    sitBlend = THREE.MathUtils.damp(sitBlend, pose === 'sit' ? 1 : 0, 9, delta);
+    const moving = pose === 'walk' || pose === 'run';
+    const gait = moving ? Math.sin(time * (pose === 'run' ? 16 : 10)) * 0.35 : 0;
+    const bob = moving ? Math.abs(Math.sin(time * 14)) * 0.05 : Math.sin(time * 2) * 0.012;
+
+    body.position.y = THREE.MathUtils.lerp(0.75 + bob, 0.58, sitBlend);
+    body.scale.y = THREE.MathUtils.lerp(0.8, 0.68, sitBlend);
+    head.position.y = THREE.MathUtils.lerp(1.4 + bob * 0.5, 1.2, sitBlend);
+    head.rotation.x = THREE.MathUtils.lerp(Math.sin(time * 1.4) * 0.035, -0.08, sitBlend);
+    tail.rotation.y = Math.sin(time * 5) * 0.28;
+
+    legs.frontLeft.rotation.x = gait;
+    legs.frontRight.rotation.x = -gait;
+    legs.hindLeft.rotation.x = THREE.MathUtils.lerp(-gait, -1.05, sitBlend);
+    legs.hindRight.rotation.x = THREE.MathUtils.lerp(gait, -1.05, sitBlend);
+    legs.frontLeft.position.y = THREE.MathUtils.lerp(0.3, 0.26, sitBlend);
+    legs.frontRight.position.y = THREE.MathUtils.lerp(0.3, 0.26, sitBlend);
+  };
+}
+
+registerAvatarType('human', {
+  label: '사람',
+  height: 2.7,
+  create: () => humanAvatarTemplate.clone(true),
+  animate: createHumanoidAnimator
+});
+
+const dogAvatarTemplate = lunchDog.clone(true);
+dogAvatarTemplate.position.set(0, 0, 0);
+registerAvatarType('dog', {
+  label: '강아지',
+  height: 1.95,
+  create: () => dogAvatarTemplate.clone(true),
+  animate: createDogAnimator
+});
+
+let activeAvatarController = createAvatarController('human');
+player.add(activeAvatarController.model);
+scene.add(player);
+
+let isSitting = false;
+
+const avatarControlsStyle = document.createElement('style');
+avatarControlsStyle.textContent = `
+  #avatar-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    z-index: 3900;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transform: translateX(-50%);
+    padding: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 18px;
+    background: rgba(18, 45, 55, 0.78);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
+    backdrop-filter: blur(8px);
+  }
+  #avatar-controls select,
+  #avatar-controls button {
+    min-height: 42px;
+    border: 0;
+    border-radius: 12px;
+    padding: 0 14px;
+    font: 600 14px sans-serif;
+  }
+  #avatar-controls select {
+    color: #20363b;
+    background: #fff;
+  }
+  #avatar-sit-button {
+    color: #20363b;
+    background: #ffe0a6;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  #avatar-sit-button:active { transform: scale(0.96); }
+  @media (pointer: coarse) {
+    #avatar-controls { bottom: 14px; gap: 6px; padding: 6px; }
+    #avatar-controls select,
+    #avatar-controls button { min-height: 40px; padding: 0 11px; font-size: 13px; }
+  }
+`;
+document.head.appendChild(avatarControlsStyle);
+
+const avatarControls = document.createElement('div');
+avatarControls.id = 'avatar-controls';
+
+const avatarSelect = document.createElement('select');
+avatarSelect.id = 'avatar-select';
+avatarSelect.setAttribute('aria-label', '캐릭터 종류');
+avatarRegistry.forEach((definition, type) => {
+  const option = document.createElement('option');
+  option.value = type;
+  option.textContent = definition.label;
+  avatarSelect.appendChild(option);
+});
+
+const sitButton = document.createElement('button');
+sitButton.id = 'avatar-sit-button';
+sitButton.type = 'button';
+sitButton.textContent = '🪑 앉기';
+sitButton.setAttribute('aria-pressed', 'false');
+
+avatarControls.append(avatarSelect, sitButton);
+document.body.appendChild(avatarControls);
+
+function setActiveAvatar(type) {
+  if (!avatarRegistry.has(type) || type === activeAvatarController.type) return;
+
+  player.remove(activeAvatarController.model);
+  activeAvatarController = createAvatarController(type);
+  player.add(activeAvatarController.model);
+  avatarSelect.value = type;
+}
+
+function setSitting(sitting) {
+  if (sitting && (isJumping || player.position.y > 0.05)) return;
+
+  isSitting = sitting;
+  if (isSitting) {
+    isMovingToTarget = false;
+    Object.keys(keys).forEach((key) => { keys[key] = false; });
+  }
+
+  sitButton.textContent = isSitting ? '🧍 일어서기' : '🪑 앉기';
+  sitButton.setAttribute('aria-pressed', String(isSitting));
+}
+
+avatarSelect.addEventListener('change', () => setActiveAvatar(avatarSelect.value));
+sitButton.addEventListener('click', () => setSitting(!isSitting));
+
+
 
 // 다른 플레이어 관리
 const remotePlayers = {};
+const remoteAvatarControllers = {};
 // 상대방 닉네임 HTML 요소 관리
 const remotePlayerNames = {};
 
@@ -1056,7 +1308,7 @@ function updateRemoteSpeechBubbles() {
     if (!remotePlayer || bubble.style.display === 'none') return;
 
     const position = remotePlayer.position.clone();
-    position.y += 2.5;
+    position.y += remoteAvatarControllers[playerId]?.height ?? 2.5;
     position.project(camera);
 
     const x = (position.x * 0.5 + 0.5) * window.innerWidth;
@@ -1077,7 +1329,7 @@ function updateRemotePlayerNames() {
 
     const position = new THREE.Vector3(
       remotePlayer.position.x,
-      remotePlayer.position.y + 2.7,
+      remotePlayer.position.y + (remoteAvatarControllers[playerId]?.height ?? 2.7),
       remotePlayer.position.z
     );
 
@@ -1197,8 +1449,10 @@ function updateNicknameLabel(sprite, nickname) {
 function createRemotePlayer(data) {
   if (remotePlayers[data.id]) return;
 
-  // 내 캐릭터 복제
-  const remotePlayer = player.clone(true);
+  const remotePlayer = new THREE.Group();
+  const remoteAvatar = createAvatarController(data.avatarType || 'human');
+  remoteAvatar.pose = data.pose || 'idle';
+  remotePlayer.add(remoteAvatar.model);
 
   remotePlayer.position.set(
     data.x ?? 0,
@@ -1216,9 +1470,22 @@ function createRemotePlayer(data) {
   document.body.appendChild(nicknameLabel);
 
   remotePlayers[data.id] = remotePlayer;
+  remoteAvatarControllers[data.id] = remoteAvatar;
   remotePlayerNames[data.id] = nicknameLabel;
 
   console.log('상대방 캐릭터 생성:', data.id);
+}
+
+function setRemoteAvatarType(playerId, type) {
+  const remotePlayer = remotePlayers[playerId];
+  const currentAvatar = remoteAvatarControllers[playerId];
+  if (!remotePlayer || !currentAvatar || !avatarRegistry.has(type)) return;
+
+  const nextAvatar = createAvatarController(type);
+  nextAvatar.pose = currentAvatar.pose;
+  remotePlayer.remove(currentAvatar.model);
+  remotePlayer.add(nextAvatar.model);
+  remoteAvatarControllers[playerId] = nextAvatar;
 }
 
 
@@ -1240,6 +1507,7 @@ socket.on('playerDisconnected', (playerId) => {
 
   scene.remove(remotePlayers[playerId]);
   delete remotePlayers[playerId];
+  delete remoteAvatarControllers[playerId];
 
   // 상대방 닉네임 제거
   if (remotePlayerNames[playerId]) {
@@ -1310,7 +1578,6 @@ let isJumping = false;
 
 const gravity = 20;
 const jumpPower = 8;
-let landingTimer = 0;
 
 
 
@@ -1358,20 +1625,16 @@ window.addEventListener('keydown', (e) => {
     alert(`🐶 오늘의 점심 메뉴는...\n\n${menu} 입니다!`);
   }
 
-  if (e.code === 'Space') {
+  if (e.code === 'Space' && !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(document.activeElement.tagName)) {
     e.preventDefault();
 
     if (!isJumping) {
+      setSitting(false);
       verticalVelocity = jumpPower;
       isJumping = true;
     }
   }
 });
-
-// 눈 깜빡임
-let blinkTimer = 0;
-let nextBlink = 3;
-let isBlinking = false;
 
 window.addEventListener('keyup', (e) => {
   keys[e.key.toLowerCase()] = false;
@@ -1657,54 +1920,15 @@ function animate() {
   const delta = Math.min(clock.getDelta(), 0.05);
   waterTexture.offset.x = (waterTexture.offset.x + delta * 0.012) % 1;
 
-  // 눈 깜빡임 애니메이션
-  blinkTimer += delta;
-
-  if (!isBlinking && blinkTimer >= nextBlink) {
-    isBlinking = true;
-    blinkTimer = 0;
-  }
-
-  if (isBlinking) {
-    const blinkProgress = blinkTimer / 0.15;
-    const eyeScale = Math.abs(1 - blinkProgress * 2);
-
-    leftEye.scale.y = Math.max(0.1, eyeScale);
-    rightEye.scale.y = Math.max(0.1, eyeScale);
-
-    if (blinkTimer >= 0.15) {
-      isBlinking = false;
-      blinkTimer = 0;
-      nextBlink = 2 + Math.random() * 3;
-      leftEye.scale.y = 1;
-      rightEye.scale.y = 1;
-    }
-  }
-
   // 점프 물리
   verticalVelocity -= gravity * delta;
   player.position.y += verticalVelocity * delta;
 
   // 바닥에 착지
   if (player.position.y <= 0) {
-    if (isJumping) {
-      landingTimer = 0.18;
-    }
-
     player.position.y = 0;
     verticalVelocity = 0;
     isJumping = false;
-  }
-
-  // 착지 순간 몸을 살짝 웅크리는 모션
-  if (landingTimer > 0) {
-    landingTimer = Math.max(0, landingTimer - delta);
-
-    const progress = 1 - landingTimer / 0.18;
-
-    torso.scale.y = 1 - Math.sin(progress * Math.PI) * 0.2;
-  } else {
-    torso.scale.y = 1;
   }
 
   // 걷기와 달리기 속도
@@ -1725,6 +1949,10 @@ function animate() {
     0,
     -Math.cos(cameraAngle) * forward - Math.sin(cameraAngle) * right
   );
+
+  if (isSitting && (direction.lengthSq() > 0 || isMovingToTarget)) {
+    setSitting(false);
+  }
 
   // 모바일 터치 목적지 이동
   let touchMoveDistance = 0;
@@ -1751,8 +1979,11 @@ function animate() {
     }
   }
 
+  let playerPose = 'idle';
+
   if (direction.length() > 0) {
     direction.normalize();
+    playerPose = isRunning ? 'run' : 'walk';
 
     // 캐릭터 이동
     if (isMovingToTarget && touchMoveDistance > 0) {
@@ -1772,45 +2003,15 @@ function animate() {
     // 이동 방향으로 캐릭터 회전
     player.rotation.y = Math.atan2(direction.x, direction.z);
 
-    // 걷기와 달리기 애니메이션
-    const gaitSpeed = isRunning ? 16 : 10;
-    const gaitPower = isRunning ? 0.9 : 0.55;
-
-    const swing = Math.sin(clock.elapsedTime * gaitSpeed) * gaitPower;
-
-    // 다리 움직임
-    leftLeg.rotation.x = swing;
-    rightLeg.rotation.x = -swing;
-
-    // 팔 움직임
-    leftArm.rotation.x = -swing * 0.7;
-    rightArm.rotation.x = swing * 0.7;
-
-    // 달릴 때 몸이 더 크게 위아래로 움직임
-    torso.position.y = 1.05 + Math.abs(Math.sin(clock.elapsedTime * gaitSpeed * 2)) * (isRunning ? 0.09 : 0.035);
-
-  } else {
-    // 대기 애니메이션
-    const idleTime = clock.elapsedTime;
-
-    // 다리는 자연스럽게 유지
-    leftLeg.rotation.x = 0;
-    rightLeg.rotation.x = 0;
-
-    // 팔을 조금 더 크게 움직임
-    leftArm.rotation.x = Math.sin(idleTime * 1.5) * 0.12;
-    rightArm.rotation.x = Math.sin(idleTime * 1.5 + 0.5) * 0.12;
-
-    // 숨 쉬는 동작
-    torso.position.y = 1.05 + Math.sin(idleTime * 2) * 0.035;
-    torso.scale.y = 1 + Math.sin(idleTime * 2) * 0.035;
-
-    // 몸 전체가 살짝 좌우로 흔들림
-    player.rotation.z = Math.sin(idleTime * 1.2) * 0.025;
-
-    // 머리 움직임
-    player.children[2].rotation.z = Math.sin(idleTime * 0.8) * 0.04;
   }
+
+  if (isJumping) playerPose = 'jump';
+  if (isSitting) playerPose = 'sit';
+  activeAvatarController.update(playerPose, clock.elapsedTime, delta, isRunning);
+
+  Object.values(remoteAvatarControllers).forEach((avatar) => {
+    avatar.update(avatar.pose || 'idle', clock.elapsedTime, delta);
+  });
 
   // 마을과 해변 안에서만 이동하고 바다로 들어가지 않도록 경계 설정
   player.position.x = THREE.MathUtils.clamp(player.position.x, -44, 44);
@@ -1853,6 +2054,8 @@ function animate() {
       y: player.position.y,
       z: player.position.z,
       rotationY: player.rotation.y,
+      avatarType: activeAvatarController.type,
+      pose: activeAvatarController.pose,
       nickname: chatNickname.value.trim() || '플레이어'
     });
   }
@@ -1949,7 +2152,7 @@ function updateSpeechBubble(delta) {
   // 캐릭터 머리 위 3D 좌표
   const bubblePosition = new THREE.Vector3(
     player.position.x,
-    player.position.y + 2.7,
+    player.position.y + activeAvatarController.height,
     player.position.z
   );
 
@@ -1986,7 +2189,7 @@ function updatePlayerName() {
 
   const namePosition = new THREE.Vector3(
     player.position.x,
-    player.position.y + 2.7,
+    player.position.y + activeAvatarController.height,
     player.position.z
   );
 
