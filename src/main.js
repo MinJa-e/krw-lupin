@@ -1246,28 +1246,54 @@ let isSitting = false;
 
 const avatarControlsStyle = document.createElement('style');
 avatarControlsStyle.textContent = `
-  #avatar-controls {
+  #avatar-controls-wrapper {
     position: fixed;
-    left: 50%;
-    bottom: 24px;
+    right: 16px;
+    bottom: 72px;
     z-index: 3900;
     display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  #avatar-controls-toggle {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(18, 45, 55, 0.78);
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
     align-items: center;
-    gap: 8px;
-    transform: translateX(-50%);
-    padding: 7px;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    backdrop-filter: blur(8px);
+    touch-action: manipulation;
+    user-select: none;
+  }
+  #avatar-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px;
     border: 1px solid rgba(255, 255, 255, 0.65);
-    border-radius: 18px;
+    border-radius: 14px;
     background: rgba(18, 45, 55, 0.78);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
     backdrop-filter: blur(8px);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  #avatar-controls.hidden {
+    display: none;
   }
   #avatar-controls button {
-    min-height: 42px;
+    min-height: 34px;
     border: 0;
-    border-radius: 12px;
-    padding: 0 14px;
-    font: 600 14px sans-serif;
+    border-radius: 10px;
+    padding: 0 12px;
+    font: 600 12px sans-serif;
   }
   #avatar-sit-button {
     color: #20363b;
@@ -1280,14 +1306,27 @@ avatarControlsStyle.textContent = `
   }
   #avatar-sit-button:active { transform: scale(0.96); }
   @media (pointer: coarse) {
-    #avatar-controls { bottom: 14px; gap: 6px; padding: 6px; }
-    #avatar-controls button { min-height: 44px; padding: 0 16px; font-size: 14px; }
+    #avatar-controls { gap: 6px; padding: 6px; }
+    #avatar-controls button { min-height: 40px; padding: 0 14px; font-size: 13px; }
   }
 `;
 document.head.appendChild(avatarControlsStyle);
 
+const avatarControlsWrapper = document.createElement('div');
+avatarControlsWrapper.id = 'avatar-controls-wrapper';
+
+const avatarControlsToggle = document.createElement('button');
+avatarControlsToggle.id = 'avatar-controls-toggle';
+avatarControlsToggle.type = 'button';
+avatarControlsToggle.title = '동작 버튼 숨기기/보이기';
+avatarControlsToggle.textContent = '🪑';
+
 const avatarControls = document.createElement('div');
 avatarControls.id = 'avatar-controls';
+
+avatarControlsToggle.addEventListener('click', () => {
+  avatarControls.classList.toggle('hidden');
+});
 
 const sitButton = document.createElement('button');
 sitButton.id = 'avatar-sit-button';
@@ -1297,7 +1336,9 @@ sitButton.textContent = '🪑 앉기';
 sitButton.setAttribute('aria-pressed', 'false');
 
 avatarControls.appendChild(sitButton);
-document.body.appendChild(avatarControls);
+avatarControlsWrapper.appendChild(avatarControls);
+avatarControlsWrapper.appendChild(avatarControlsToggle);
+document.body.appendChild(avatarControlsWrapper);
 sitButton.dataset.companionAvatarType = detectAvatarType(lunchDog);
 
 function setSitting(sitting) {
