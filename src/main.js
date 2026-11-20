@@ -782,7 +782,7 @@ const humanAvatarTemplate = new THREE.Group();
 // 재질
 const skinMat = new THREE.MeshStandardMaterial({ color: 0xffd0ad });
 const hairMat = new THREE.MeshStandardMaterial({ color: 0x493126 });
-const shirtMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+const shirtMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
 const pantsMat = new THREE.MeshStandardMaterial({ color: 0x303d59 });
 const shoeMat = new THREE.MeshStandardMaterial({ color: 0xf4f1e9 });
 const eyeMat = new THREE.MeshStandardMaterial({ color: 0x252525 });
