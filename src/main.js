@@ -367,11 +367,11 @@ scene.add(ground);
 
 // 마을을 관통해 해변으로 이어지는 돌길
 const road = new THREE.Mesh(
-  new THREE.PlaneGeometry(4.8, 84),
+  new THREE.PlaneGeometry(4.8, 96),
   new THREE.MeshStandardMaterial({ map: cobbleTexture, roughness: 1 })
 );
 road.rotation.x = -Math.PI / 2;
-road.position.set(0, 0.025, 16);
+road.position.set(0, 0.025, 22);
 road.receiveShadow = true;
 scene.add(road);
 
@@ -627,15 +627,15 @@ function createJapaneseHouse(x, z, facing, wallColor, signLabel) {
   [10, 17, -Math.PI / 2, 0xe5d8bd, 'おみやげ'],
   [-13, 29, Math.PI / 2, 0xe0d1b3, '浜の宿'],
   [13, 29, -Math.PI / 2, 0xd6c5a7, 'しおさい'],
-  // 북쪽 루프 구역 (Z 좌표 +36 만큼 평행 이동하여 동일한 거리/건물 배치 반복)
-  [-10, -6 + 36, Math.PI / 2, 0xe3d4b7, '呉服店'],
-  [10, -6 + 36, -Math.PI / 2, 0xd6c5a6, '茶屋'],
-  [-11, 2 + 36, Math.PI / 2, 0xe9dfc9, '文具店'],
-  [11, 2 + 36, -Math.PI / 2, 0xdcc9a9, '果物屋'],
-  [-10, 17 + 36, Math.PI / 2, 0xd8c8aa, '和菓子'],
-  [10, 17 + 36, -Math.PI / 2, 0xe5d8bd, '雑貨店'],
-  [-13, 29 + 36, Math.PI / 2, 0xe0d1b3, '酒屋'],
-  [13, 29 + 36, -Math.PI / 2, 0xd6c5a7, '食堂']
+  // 북쪽 루프 구역 (겹침 없이 간격과 배치가 깔끔하도록 조정)
+  [-10, -6 + 48, Math.PI / 2, 0xe3d4b7, '呉服店'],
+  [10, -6 + 48, -Math.PI / 2, 0xd6c5a6, '茶屋'],
+  [-11, 2 + 48, Math.PI / 2, 0xe9dfc9, '文具店'],
+  [11, 2 + 48, -Math.PI / 2, 0xdcc9a9, '果物屋'],
+  [-10, 17 + 48, Math.PI / 2, 0xd8c8aa, '和菓子'],
+  [10, 17 + 48, -Math.PI / 2, 0xe5d8bd, '雑貨店'],
+  [-13, 29 + 48, Math.PI / 2, 0xe0d1b3, '酒屋'],
+  [13, 29 + 48, -Math.PI / 2, 0xd6c5a7, '食堂']
 ].forEach(([x, z, facing, wallColor, signLabel]) => {
   createJapaneseHouse(x, z, facing, wallColor, signLabel);
 });
