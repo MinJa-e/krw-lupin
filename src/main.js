@@ -1251,19 +1251,15 @@ avatarControlsStyle.textContent = `
     right: 16px;
     bottom: 72px;
     z-index: 3900;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
   }
   #avatar-controls-toggle {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border: none;
     border-radius: 50%;
     background: rgba(18, 45, 55, 0.78);
     color: white;
-    font-size: 15px;
+    font-size: 17px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1272,43 +1268,9 @@ avatarControlsStyle.textContent = `
     backdrop-filter: blur(8px);
     touch-action: manipulation;
     user-select: none;
-  }
-  #avatar-controls {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.65);
-    border-radius: 14px;
-    background: rgba(18, 45, 55, 0.78);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
-    backdrop-filter: blur(8px);
-    transition: opacity 0.2s, transform 0.2s;
-  }
-  #avatar-controls.hidden {
-    display: none;
-  }
-  #avatar-controls button {
-    min-height: 34px;
-    border: 0;
-    border-radius: 10px;
-    padding: 0 12px;
-    font: 600 12px sans-serif;
-  }
-  #avatar-sit-button {
-    color: #20363b;
-    background: #ffe0a6;
-    cursor: pointer;
-    touch-action: manipulation;
-    user-select: none;
     -webkit-tap-highlight-color: transparent;
-    pointer-events: auto;
   }
-  #avatar-sit-button:active { transform: scale(0.96); }
-  @media (pointer: coarse) {
-    #avatar-controls { gap: 6px; padding: 6px; }
-    #avatar-controls button { min-height: 40px; padding: 0 14px; font-size: 13px; }
-  }
+  #avatar-controls-toggle:active { transform: scale(0.93); }
 `;
 document.head.appendChild(avatarControlsStyle);
 
@@ -1318,27 +1280,15 @@ avatarControlsWrapper.id = 'avatar-controls-wrapper';
 const avatarControlsToggle = document.createElement('button');
 avatarControlsToggle.id = 'avatar-controls-toggle';
 avatarControlsToggle.type = 'button';
-avatarControlsToggle.title = '동작 버튼 숨기기/보이기';
+avatarControlsToggle.setAttribute('aria-label', '앉기');
+avatarControlsToggle.setAttribute('aria-pressed', 'false');
 avatarControlsToggle.textContent = '🪑';
 
-const avatarControls = document.createElement('div');
-avatarControls.id = 'avatar-controls';
-
-avatarControlsToggle.addEventListener('click', () => {
-  avatarControls.classList.toggle('hidden');
-});
-
-const sitButton = document.createElement('button');
-sitButton.id = 'avatar-sit-button';
-sitButton.type = 'button';
-sitButton.setAttribute('aria-label', '앉기');
-sitButton.textContent = '🪑 앉기';
-sitButton.setAttribute('aria-pressed', 'false');
-
-avatarControls.appendChild(sitButton);
-avatarControlsWrapper.appendChild(avatarControls);
 avatarControlsWrapper.appendChild(avatarControlsToggle);
 document.body.appendChild(avatarControlsWrapper);
+
+// sitButton 참조가 필요한 코드와의 호환성을 위해 별칭 설정
+const sitButton = avatarControlsToggle;
 sitButton.dataset.companionAvatarType = detectAvatarType(lunchDog);
 
 function setSitting(sitting) {
@@ -1351,12 +1301,12 @@ function setSitting(sitting) {
     Object.keys(keys).forEach((key) => { keys[key] = false; });
   }
 
-  sitButton.textContent = isSitting ? '🧍 일어서기' : '🪑 앉기';
-  sitButton.setAttribute('aria-label', isSitting ? '일어서기' : '앉기');
-  sitButton.setAttribute('aria-pressed', String(isSitting));
+  avatarControlsToggle.textContent = isSitting ? '🧍' : '🪑';
+  avatarControlsToggle.setAttribute('aria-label', isSitting ? '일어서기' : '앉기');
+  avatarControlsToggle.setAttribute('aria-pressed', String(isSitting));
 }
 
-sitButton.addEventListener('click', (event) => {
+avatarControlsToggle.addEventListener('click', (event) => {
   event.preventDefault();
   setSitting(!isSitting);
 });
