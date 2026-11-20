@@ -697,8 +697,89 @@ function createVillageLantern(x, z) {
 [
   [-4.1, -5], [4.1, -5],
   [-4.1, 5], [4.1, 5],
-  [-4.1, 19], [4.1, 19]
+  [-4.1, 19], [4.1, 19],
+  [-4.1, -12], [4.1, -12],
+  [-4.1, 12], [4.1, 12],
+  [-4.1, 26], [4.1, 26]
 ].forEach(([x, z]) => createVillageLantern(x, z));
+
+// 마을 풍성함을 위한 벤치, 자판기, 가로수 추가
+function createVillageBench(x, z, rotationY = 0) {
+  const bench = new THREE.Group();
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x8a5a36, roughness: 0.9 });
+  const ironMat = new THREE.MeshStandardMaterial({ color: 0x2b2b2b, roughness: 0.7 });
+
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 0.6), woodMat);
+  seat.position.y = 0.45;
+  bench.add(seat);
+
+  const back = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.5, 0.08), woodMat);
+  back.position.set(0, 0.75, -0.26);
+  bench.add(back);
+
+  [-0.7, 0.7].forEach((bx) => {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.45, 0.5), ironMat);
+    leg.position.set(bx, 0.225, 0);
+    bench.add(leg);
+  });
+
+  bench.position.set(x, 0, z);
+  bench.rotation.y = rotationY;
+  bench.traverse((obj) => { if (obj.isMesh) obj.castShadow = true; });
+  scene.add(bench);
+}
+
+function createVillageVendingMachine(x, z, rotationY = 0) {
+  const vm = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd93838, roughness: 0.5 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x223344, roughness: 0.2, metalness: 0.8 });
+
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.8, 0.7), bodyMat);
+  body.position.y = 0.9;
+  vm.add(body);
+
+  const windowPanel = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.1, 0.05), glassMat);
+  windowPanel.position.set(0, 1.05, 0.36);
+  vm.add(windowPanel);
+
+  vm.position.set(x, 0, z);
+  vm.rotation.y = rotationY;
+  vm.traverse((obj) => { if (obj.isMesh) obj.castShadow = true; });
+  scene.add(vm);
+}
+
+function createVillageTree(x, z) {
+  const tree = new THREE.Group();
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 1 });
+  const leavesMat = new THREE.MeshStandardMaterial({ color: 0x3d7a49, roughness: 0.9 });
+
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 2.2, 8), trunkMat);
+  trunk.position.y = 1.1;
+  tree.add(trunk);
+
+  const leaves = new THREE.Mesh(new THREE.SphereGeometry(1.3, 12, 12), leavesMat);
+  leaves.position.y = 2.6;
+  tree.add(leaves);
+
+  tree.position.set(x, 0, z);
+  tree.traverse((obj) => { if (obj.isMesh) obj.castShadow = true; });
+  scene.add(tree);
+}
+
+// 배치 실행
+createVillageBench(-3.2, 3, Math.PI / 2);
+createVillageBench(3.2, 3, -Math.PI / 2);
+createVillageBench(-3.2, -8, Math.PI / 2);
+createVillageBench(3.2, -8, -Math.PI / 2);
+
+createVillageVendingMachine(-6.2, 8, Math.PI / 2);
+createVillageVendingMachine(6.2, -3, -Math.PI / 2);
+
+[
+  [-8, -12], [8, -12],
+  [-9, 8], [9, 8],
+  [-8, 22], [8, 22]
+].forEach(([x, z]) => createVillageTree(x, z));
 
 // 해변 파라솔
 function createBeachUmbrella(x, z, canopyColor) {
