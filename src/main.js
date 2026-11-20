@@ -880,7 +880,7 @@ function createLeg(x) {
   humanAvatarTemplate.add(hip);
 
   const thigh = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.12, 0.12, 4, 8),
+    new THREE.CapsuleGeometry(0.18, 0.12, 4, 8),
     pantsMat
   );
   thigh.position.y = -0.18;
@@ -893,7 +893,7 @@ function createLeg(x) {
   hip.add(knee);
 
   const shin = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.10, 0.08, 4, 8),
+    new THREE.CapsuleGeometry(0.16, 0.08, 4, 8),
     pantsMat
   );
   shin.position.y = -0.12;
