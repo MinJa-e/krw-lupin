@@ -868,8 +868,8 @@ function createArm(x) {
   return pivot;
 }
 
-const leftArm = createArm(-0.42);
-const rightArm = createArm(0.42);
+const leftArm = createArm(-0.30);
+const rightArm = createArm(0.30);
 
 // 다리 생성 함수
 function createLeg(x) {
