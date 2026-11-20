@@ -782,7 +782,7 @@ const humanAvatarTemplate = new THREE.Group();
 // 재질
 const skinMat = new THREE.MeshStandardMaterial({ color: 0xffd0ad });
 const hairMat = new THREE.MeshStandardMaterial({ color: 0x493126 });
-const shirtMat = new THREE.MeshStandardMaterial({ color: 0x5689d8 });
+const shirtMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
 const pantsMat = new THREE.MeshStandardMaterial({ color: 0x303d59 });
 const shoeMat = new THREE.MeshStandardMaterial({ color: 0xf4f1e9 });
 const eyeMat = new THREE.MeshStandardMaterial({ color: 0x252525 });
@@ -805,7 +805,7 @@ function makeSphere(parent, radius, position, material, scale = [1, 1, 1]) {
 
 // 몸통
 const torso = new THREE.Mesh(
-  new THREE.CapsuleGeometry(0.34, 0.45, 6, 12),
+  new THREE.CapsuleGeometry(0.26, 0.45, 6, 12),
   shirtMat
 );
 torso.position.y = 1.05;
@@ -855,7 +855,7 @@ function createArm(x) {
   humanAvatarTemplate.add(pivot);
 
   const arm = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.13, 0.42, 4, 8),
+    new THREE.CapsuleGeometry(0.09, 0.42, 4, 8),
     shirtMat
   );
 
@@ -880,7 +880,7 @@ function createLeg(x) {
   humanAvatarTemplate.add(hip);
 
   const thigh = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.18, 0.12, 4, 8),
+    new THREE.CapsuleGeometry(0.12, 0.12, 4, 8),
     pantsMat
   );
   thigh.position.y = -0.18;
@@ -893,7 +893,7 @@ function createLeg(x) {
   hip.add(knee);
 
   const shin = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.16, 0.08, 4, 8),
+    new THREE.CapsuleGeometry(0.10, 0.08, 4, 8),
     pantsMat
   );
   shin.position.y = -0.12;
