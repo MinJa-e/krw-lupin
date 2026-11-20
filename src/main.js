@@ -809,6 +809,7 @@ const torso = new THREE.Mesh(
   shirtMat
 );
 torso.position.y = 1.05;
+torso.scale.set(1.3, 1, 1);
 torso.name = 'avatar-torso';
 torso.castShadow = true;
 humanAvatarTemplate.add(torso);
@@ -868,8 +869,8 @@ function createArm(x) {
   return pivot;
 }
 
-const leftArm = createArm(-0.30);
-const rightArm = createArm(0.30);
+const leftArm = createArm(-0.37);
+const rightArm = createArm(0.37);
 
 // 다리 생성 함수
 function createLeg(x) {
