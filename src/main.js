@@ -358,14 +358,14 @@ function createShopSignTexture(label) {
 
 // 해변 마을 지형
 const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(260, 260),
+  new THREE.PlaneGeometry(200, 200),
   new THREE.MeshStandardMaterial({ map: sandTexture, color: 0xffffff, roughness: 1 })
 );
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// 마을을 관통해 해변으로 이어지는 메인 돌길
+// 마을을 관통해 해변으로 이어지는 돌길
 const road = new THREE.Mesh(
   new THREE.PlaneGeometry(4.8, 96),
   new THREE.MeshStandardMaterial({ map: cobbleTexture, roughness: 1 })
@@ -375,13 +375,12 @@ road.position.set(0, 0.025, 22);
 road.receiveShadow = true;
 scene.add(road);
 
-// 중앙 교차로
 const crossRoad = new THREE.Mesh(
-  new THREE.PlaneGeometry(88, 3.4),
+  new THREE.PlaneGeometry(38, 3.4),
   new THREE.MeshStandardMaterial({
     map: (() => {
       const texture = cobbleTexture.clone();
-      texture.repeat.set(28, 1);
+      texture.repeat.set(12, 1);
       return texture;
     })(),
     roughness: 1
@@ -391,74 +390,6 @@ crossRoad.rotation.x = -Math.PI / 2;
 crossRoad.position.set(0, 0.026, 9);
 crossRoad.receiveShadow = true;
 scene.add(crossRoad);
-
-// 서쪽(좌측) 측면 골목길
-const westRoad = new THREE.Mesh(
-  new THREE.PlaneGeometry(3.6, 72),
-  new THREE.MeshStandardMaterial({
-    map: (() => {
-      const texture = cobbleTexture.clone();
-      texture.repeat.set(1, 22);
-      return texture;
-    })(),
-    roughness: 1
-  })
-);
-westRoad.rotation.x = -Math.PI / 2;
-westRoad.position.set(-28, 0.025, 20);
-westRoad.receiveShadow = true;
-scene.add(westRoad);
-
-// 동쪽(우측) 측면 골목길
-const eastRoad = new THREE.Mesh(
-  new THREE.PlaneGeometry(3.6, 72),
-  new THREE.MeshStandardMaterial({
-    map: (() => {
-      const texture = cobbleTexture.clone();
-      texture.repeat.set(1, 22);
-      return texture;
-    })(),
-    roughness: 1
-  })
-);
-eastRoad.rotation.x = -Math.PI / 2;
-eastRoad.position.set(28, 0.025, 20);
-eastRoad.receiveShadow = true;
-scene.add(eastRoad);
-
-// 서쪽 골목 교차 연결로 (Z = 33)
-const westCrossRoad = new THREE.Mesh(
-  new THREE.PlaneGeometry(32, 3.2),
-  new THREE.MeshStandardMaterial({
-    map: (() => {
-      const texture = cobbleTexture.clone();
-      texture.repeat.set(10, 1);
-      return texture;
-    })(),
-    roughness: 1
-  })
-);
-westCrossRoad.rotation.x = -Math.PI / 2;
-westCrossRoad.position.set(-14, 0.026, 33);
-westCrossRoad.receiveShadow = true;
-scene.add(westCrossRoad);
-
-// 동쪽 골목 교차 연결로 (Z = 33)
-const eastCrossRoad = new THREE.Mesh(
-  new THREE.PlaneGeometry(32, 3.2),
-  new THREE.MeshStandardMaterial({
-    map: (() => {
-      const texture = cobbleTexture.clone();
-      texture.repeat.set(10, 1);
-      return texture;
-    })(),
-    roughness: 1
-  })
-);
-eastCrossRoad.rotation.x = -Math.PI / 2;
-eastCrossRoad.position.set(14, 0.026, 33);
-eastCrossRoad.receiveShadow = true;
-scene.add(eastCrossRoad);
 
 // 모래 해변과 얕은 물, 먼 바다
 const beachTexture = sandTexture.clone();
@@ -688,7 +619,6 @@ function createJapaneseHouse(x, z, facing, wallColor, signLabel) {
 }
 
 [
-  // 기존 메인 골목 배치
   [-10, -6, Math.PI / 2, 0xe3d4b7, '浜屋'],
   [10, -6, -Math.PI / 2, 0xd6c5a6, '海の家'],
   [-11, 2, Math.PI / 2, 0xe9dfc9, 'みなと'],
@@ -697,8 +627,7 @@ function createJapaneseHouse(x, z, facing, wallColor, signLabel) {
   [10, 17, -Math.PI / 2, 0xe5d8bd, 'おみやげ'],
   [-13, 29, Math.PI / 2, 0xe0d1b3, '浜の宿'],
   [13, 29, -Math.PI / 2, 0xd6c5a7, 'しおさい'],
-  
-  // 북쪽 확장 배치
+  // 북쪽 루프 구역 (겹침 없이 간격과 배치가 깔끔하도록 조정)
   [-10, -6 + 48, Math.PI / 2, 0xe3d4b7, '呉服店'],
   [10, -6 + 48, -Math.PI / 2, 0xd6c5a6, '茶屋'],
   [-11, 2 + 48, Math.PI / 2, 0xe9dfc9, '文具店'],
@@ -706,23 +635,7 @@ function createJapaneseHouse(x, z, facing, wallColor, signLabel) {
   [-10, 17 + 48, Math.PI / 2, 0xd8c8aa, '和菓子'],
   [10, 17 + 48, -Math.PI / 2, 0xe5d8bd, '雑貨店'],
   [-13, 29 + 48, Math.PI / 2, 0xe0d1b3, '酒屋'],
-  [13, 29 + 48, -Math.PI / 2, 0xd6c5a7, '食堂'],
-
-  // 좌측 골목 확장 배치
-  [-22, 5, 0, 0xeedcbd, '鍛冶屋'],
-  [-34, 5, Math.PI, 0xdccbb0, '桶屋'],
-  [-22, 18, 0, 0xe5d0b5, '仕立屋'],
-  [-34, 18, Math.PI, 0xd8c5a8, '古本屋'],
-  [-22, 33, 0, 0xe0ccb0, '染物屋'],
-  [-34, 33, Math.PI, 0xd2c0a5, '陶器店'],
-
-  // 우측 골목 확장 배치
-  [22, 5, 0, 0xeedcbd, '時計店'],
-  [34, 5, Math.PI, 0xdccbb0, '眼鏡屋'],
-  [22, 18, 0, 0xe5d0b5, '花屋'],
-  [34, 18, Math.PI, 0xd8c5a8, '八百屋'],
-  [22, 33, 0, 0xe0ccb0, '靴屋'],
-  [34, 33, Math.PI, 0xd2c0a5, '金物店']
+  [13, 29 + 48, -Math.PI / 2, 0xd6c5a7, '食堂']
 ].forEach(([x, z, facing, wallColor, signLabel]) => {
   createJapaneseHouse(x, z, facing, wallColor, signLabel);
 });
@@ -798,15 +711,7 @@ function createVillageLantern(x, z) {
   [-4.1, 12], [4.1, 12],
   [-4.1, 26], [4.1, 26],
   [-4.1, 38], [4.1, 38],
-  [-4.1, 50], [4.1, 50],
-  [-4.1, 62], [4.1, 62],
-  [-4.1, 74], [4.1, 74],
-  // 좌측 골목 등롱
-  [-25.5, 9], [-30.5, 9],
-  [-25.5, 33], [-30.5, 33],
-  // 우측 골목 등롱
-  [25.5, 9], [30.5, 9],
-  [25.5, 33], [30.5, 33]
+  [-4.1, 50], [4.1, 50]
 ].forEach(([x, z]) => createVillageLantern(x, z));
 
 // 마을 풍성함을 위한 벤치, 자판기, 가로수 추가
@@ -2300,8 +2205,8 @@ function animate() {
   });
 
   // 마을과 해변 안에서만 이동하고 바다로 들어가지 않도록 경계 설정
-    player.position.x = THREE.MathUtils.clamp(player.position.x, -64, 64);
-    player.position.z = THREE.MathUtils.clamp(player.position.z, -26, 84);
+  player.position.x = THREE.MathUtils.clamp(player.position.x, -44, 44);
+  player.position.z = THREE.MathUtils.clamp(player.position.z, -26, 44);
 
   // 플레이어와 강아지 사이의 거리 계산
   const dogDistance = Math.sqrt(
