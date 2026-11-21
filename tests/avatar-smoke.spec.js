@@ -6,7 +6,8 @@ test('앱이 오류 없이 시작하고 앉기 버튼이 자세 상태를 토글
 
   await page.goto(process.env.PLAYWRIGHT_BASE_URL || '/', { waitUntil: 'domcontentloaded' });
 
-  const sitButton = page.locator('#avatar-sit-button');
+  // 11caa8c에서 버튼 id가 avatar-sit-button -> avatar-controls-toggle로 변경됨
+  const sitButton = page.locator('#avatar-controls-toggle');
   await expect(sitButton).toBeVisible();
   await expect(page.locator('#avatar-select')).toHaveCount(0);
 

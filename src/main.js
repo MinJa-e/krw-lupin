@@ -530,34 +530,35 @@ function createJapaneseHouse(x, z, facing, wallColor, signLabel) {
   door.position.set(0, 0.9, depth / 2 + 0.065);
   house.add(door);
 
+  // 창문(셰) — 창틀·유리·살 대칭 격자를 묶어 방향만 바꿔 모든 벽면에서 재사용
+  const windowFrameGeometry = new THREE.BoxGeometry(1.08, 1.05, 0.1);
+  const windowPaneGeometry = new THREE.BoxGeometry(0.82, 0.78, 0.035);
+  const windowDividerGeometry = new THREE.BoxGeometry(0.055, 0.82, 0.045);
+  const windowCrossGeometry = new THREE.BoxGeometry(0.82, 0.055, 0.045);
+
+  const createWindow = (paneMaterial = windowMaterial) => {
+    const windowGroup = new THREE.Group();
+    windowGroup.add(new THREE.Mesh(windowFrameGeometry, darkWood));
+
+    const pane = new THREE.Mesh(windowPaneGeometry, paneMaterial);
+    pane.position.z = 0.06;
+    windowGroup.add(pane);
+
+    const divider = new THREE.Mesh(windowDividerGeometry, darkWood);
+    divider.position.z = 0.085;
+    windowGroup.add(divider);
+
+    const crossDivider = new THREE.Mesh(windowCrossGeometry, darkWood);
+    crossDivider.position.z = 0.085;
+    windowGroup.add(crossDivider);
+
+    return windowGroup;
+  };
+
   [-1.55, 1.55].forEach((windowX) => {
-    const frame = new THREE.Mesh(
-      new THREE.BoxGeometry(1.08, 1.05, 0.1),
-      darkWood
-    );
-    frame.position.set(windowX, 1.85, depth / 2 + 0.07);
-    house.add(frame);
-
-    const windowPane = new THREE.Mesh(
-      new THREE.BoxGeometry(0.82, 0.78, 0.035),
-      windowMaterial
-    );
-    windowPane.position.set(windowX, 1.85, depth / 2 + 0.13);
-    house.add(windowPane);
-
-    const divider = new THREE.Mesh(
-      new THREE.BoxGeometry(0.055, 0.82, 0.045),
-      darkWood
-    );
-    divider.position.set(windowX, 1.85, depth / 2 + 0.155);
-    house.add(divider);
-
-    const crossDivider = new THREE.Mesh(
-      new THREE.BoxGeometry(0.82, 0.055, 0.045),
-      darkWood
-    );
-    crossDivider.position.set(windowX, 1.85, depth / 2 + 0.155);
-    house.add(crossDivider);
+    const frontWindow = createWindow();
+    frontWindow.position.set(windowX, 1.85, depth / 2 + 0.07);
+    house.add(frontWindow);
   });
 
   const sign = new THREE.Mesh(
@@ -606,6 +607,109 @@ function createJapaneseHouse(x, z, facing, wallColor, signLabel) {
   );
   frontBeam.position.set(0, wallHeight - 0.08, depth / 2 + 0.08);
   house.add(frontBeam);
+
+  // 좌·우 측벽 — 하부 목재 판벽, 상부 보, 가운데 기둥, 커튼 창 2개
+  [-1, 1].forEach((side) => {
+    const sideX = side * (width / 2);
+
+    [-1.25, 1.25].forEach((offsetZ) => {
+      const sideWindow = createWindow();
+      sideWindow.rotation.y = side === 1 ? Math.PI / 2 : -Math.PI / 2;
+      sideWindow.position.set(sideX + side * 0.07, 1.85, offsetZ);
+      house.add(sideWindow);
+    });
+
+    const sideBase = new THREE.Mesh(
+      new THREE.BoxGeometry(0.1, 0.62, depth),
+      darkWood
+    );
+    sideBase.position.set(sideX + side * 0.05, 0.31, 0);
+    house.add(sideBase);
+
+    const sideBeam = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.16, depth + 0.16),
+      darkWood
+    );
+    sideBeam.position.set(sideX + side * 0.08, wallHeight - 0.08, 0);
+    house.add(sideBeam);
+
+    const sidePost = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, wallHeight, 0.16),
+      darkWood
+    );
+    sidePost.position.set(sideX + side * 0.08, wallHeight / 2, 0);
+    house.add(sidePost);
+  });
+
+  // 뒷면 — 뒷문, 띠창 2개, 판벽, 보, 기둥
+  const backDoor = new THREE.Mesh(
+    new THREE.BoxGeometry(0.8, 1.65, 0.11),
+    darkWood
+  );
+  backDoor.position.set(0, 0.825, -(depth / 2 + 0.065));
+  house.add(backDoor);
+
+  [-1.55, 1.55].forEach((windowX) => {
+    const backWindow = createWindow(paperMaterial);
+    backWindow.rotation.y = Math.PI;
+    backWindow.position.set(windowX, 1.85, -(depth / 2 + 0.07));
+    house.add(backWindow);
+  });
+
+  const backBase = new THREE.Mesh(
+    new THREE.BoxGeometry(width, 0.62, 0.1),
+    darkWood
+  );
+  backBase.position.set(0, 0.31, -(depth / 2 + 0.05));
+  house.add(backBase);
+
+  const backBeam = new THREE.Mesh(
+    new THREE.BoxGeometry(width + 0.35, 0.16, 0.18),
+    darkWood
+  );
+  backBeam.position.set(0, wallHeight - 0.08, -(depth / 2 + 0.08));
+  house.add(backBeam);
+
+  [-2.55, 2.55].forEach((postX) => {
+    const backPost = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, wallHeight, 0.16),
+      darkWood
+    );
+    backPost.position.set(postX, wallHeight / 2, -(depth / 2 + 0.08));
+    house.add(backPost);
+  });
+
+  // 박공(삼각 벽) 위의 둥근 창 — 정면과 뒷면 모두
+  const roundRingGeometry = new THREE.TorusGeometry(0.36, 0.075, 8, 20);
+  const roundPaneGeometry = new THREE.CircleGeometry(0.33, 20);
+  const roundSpokeGeometry = new THREE.BoxGeometry(0.66, 0.05, 0.05);
+  const roundCrossSpokeGeometry = new THREE.BoxGeometry(0.05, 0.66, 0.05);
+
+  const createRoundWindow = () => {
+    const roundGroup = new THREE.Group();
+    roundGroup.add(new THREE.Mesh(roundRingGeometry, darkWood));
+
+    const roundPane = new THREE.Mesh(roundPaneGeometry, windowMaterial);
+    roundPane.position.z = 0.02;
+    roundGroup.add(roundPane);
+
+    const roundSpoke = new THREE.Mesh(roundSpokeGeometry, darkWood);
+    roundGroup.add(roundSpoke);
+
+    const roundCrossSpoke = new THREE.Mesh(roundCrossSpokeGeometry, darkWood);
+    roundGroup.add(roundCrossSpoke);
+
+    return roundGroup;
+  };
+
+  const frontRoundWindow = createRoundWindow();
+  frontRoundWindow.position.set(0, wallHeight + roofRise * 0.42, depth / 2 + 0.05);
+  house.add(frontRoundWindow);
+
+  const backRoundWindow = createRoundWindow();
+  backRoundWindow.rotation.y = Math.PI;
+  backRoundWindow.position.set(0, wallHeight + roofRise * 0.42, -(depth / 2 + 0.05));
+  house.add(backRoundWindow);
 
   house.position.set(x, 0, z);
   house.rotation.y = facing;
@@ -1226,7 +1330,9 @@ function createHumanoidAnimator(model) {
       : Math.sin(time * 2) * 0.035;
 
     model.position.y = THREE.MathUtils.lerp(0, -0.035, sitBlend);
-    torso.position.y = THREE.MathUtils.lerp(1.05 + breathing, 0.63, sitBlend);
+    // d58802d에서 몸통 캡슐 반경이 0.34→0.26으로 줄어 하단이 0.078만큼 떠서,
+    // 앉은 상체 목표를 0.08 낮춰 바닥에 붙은 이전 자세(하단 ≈0.04)를 유지한다.
+    torso.position.y = THREE.MathUtils.lerp(1.05 + breathing, 0.55, sitBlend);
     torso.scale.y = THREE.MathUtils.lerp(1 + (moving ? 0 : Math.sin(time * 2) * 0.035), 0.98, sitBlend);
     torso.rotation.x = THREE.MathUtils.lerp(pose === 'jump' ? -0.12 : 0, 0.08, sitBlend);
 
@@ -1246,12 +1352,12 @@ function createHumanoidAnimator(model) {
 
     const idleArmSwing = Math.sin(time * 1.5) * 0.12;
     const jumpArmPose = pose === 'jump' ? 0.65 : 0;
-    leftArm.position.y = THREE.MathUtils.lerp(1.32, 0.99, sitBlend);
-    rightArm.position.y = THREE.MathUtils.lerp(1.32, 0.99, sitBlend);
+    leftArm.position.y = THREE.MathUtils.lerp(1.32, 0.91, sitBlend);
+    rightArm.position.y = THREE.MathUtils.lerp(1.32, 0.91, sitBlend);
     leftArm.rotation.x = THREE.MathUtils.lerp(moving ? -swing * 0.7 : idleArmSwing + jumpArmPose, -0.45, sitBlend);
     rightArm.rotation.x = THREE.MathUtils.lerp(moving ? swing * 0.7 : idleArmSwing + jumpArmPose, -0.45, sitBlend);
 
-    head.position.y = THREE.MathUtils.lerp(1.53, 1.24, sitBlend);
+    head.position.y = THREE.MathUtils.lerp(1.53, 1.16, sitBlend);
     head.rotation.x = THREE.MathUtils.lerp(0, 0.06, sitBlend);
     head.rotation.z = Math.sin(time * 0.8) * 0.04 * (1 - sitBlend);
     model.rotation.z = Math.sin(time * 1.2) * 0.025 * (1 - sitBlend);
