@@ -3,16 +3,20 @@ import * as THREE from 'three';
 const STONE_COLOR = 0x9a9186;
 const MARKER_COLOR = 0xffd54f;
 const INTERACT_RADIUS = 3.2;
-const COLLAPSE_CHANCE_PER_LAYER = 0.05;
-const GRAVITY = 9.8;
+const COLLAPSE_CHANCE_PER_LAYER = 0.10;
+const COLLAPSE_CHANCE_CEILING = 0.40;
 
 /**
  * n층(1-based)을 쌀 때 무너질 확률.
- * 1층은 100% 안전(0%), 2층부터 층마다 5%씩 증가, 100%를 넘지 않는다.
+ * 1층 0% (100% 안전), 2층부터 10%씩 증가하지만 50%층부터는 40%로 고정.
  */
 function collapseChanceForLayer(layer) {
-  return Math.min(1, COLLAPSE_CHANCE_PER_LAYER * (layer - 1));
+  const raw = COLLAPSE_CHANCE_PER_LAYER * (layer - 1);
+  // 50층 이하이면 위 계산, 그 이상이면 40%로 고정
+  return Math.min(COLLAPSE_CHANCE_CEILING, raw);
 }
+
+const GRAVITY = 9.8;
 
 function createStone(material, size) {
   const stone = new THREE.Mesh(
@@ -32,7 +36,7 @@ function createStone(material, size) {
 /**
  * 해변 돌탑 쌓기 콘텐츠.
  * - 돌은 제한 없이 쌓인다 (높이 제한 없음)
- * - 쌓을 때 층별로 무너질 확률이 달라진다 (1층 0%, 층마다 +5%, 최대 100%)
+ * - 쌓을 때 층별로 무너질 확률이 달라진다 (1층 0%, 2층부터 10%씩 증가, 50층부터는 40% 고정)
  * - 무너지면 돌들이 물리적으로 튕기며 떨어지는 애니메이션 후 제거된다
  */
 export function createStoneTower({
