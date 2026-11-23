@@ -26,31 +26,45 @@ test('해변 돌탑이 오류 없이 생성되고 상호작용으로 돌이 쌓�
     await expect(towerButton).toBeVisible();
     await expect(towerCounter).toHaveText('0');
 
-    // 층별 무너질 확률 공식 검증: 1층 100%, 2층 95%, 3층 90%, 21층 0%, 그 이상 0%
-    await expect.poll(() => getChance(1)).toBe(1);
-    await expect.poll(() => getChance(2)).toBeCloseTo(0.95, 5);
-    await expect.poll(() => getChance(3)).toBeCloseTo(0.9, 5);
-    await expect.poll(() => getChance(21)).toBe(0);
-    await expect.poll(() => getChance(50)).toBe(0);
+    // 층별 무너질 확률 공식 검증: 1층 0%, 2층 5%, 3층 10%, 21층 100%, 그 이상 100%
+    await expect.poll(() => getChance(1)).toBe(0);
+    await expect.poll(() => getChance(2)).toBeCloseTo(0.05, 5);
+    await expect.poll(() => getChance(3)).toBeCloseTo(0.1, 5);
+    await expect.poll(() => getChance(21)).toBe(1);
+    await expect.poll(() => getChance(50)).toBe(1);
 
     // 원래 Math.random 백업
     await page.evaluate(() => { window.__origRandom = Math.random; });
 
-    // 1층은 100% → 어떤乱수でも 무조건 무너진다
+    // 1층은 0% → 무조건 안 무너지고 쌓인다
     await page.evaluate(() => { Math.random = () => 0.99; });
     await towerButton.click();
-    await expect.poll(getHeight).toBe(0);
-    await expect.poll(async () => towerCounter.textContent()).toBe('💥');
+    await expect.poll(async () => towerCounter.textContent()).toBe('1');
+    await expect.poll(getHeight).toBe(1);
 
-    // E 키로 쌓아도 1층 100%라 무너진다
+    // E 키로 2층까지 쌓인다 (2층 확률 5%, 난수 0.99라 안 무너짐)
     await page.keyboard.press('e');
-    await expect.poll(getHeight).toBe(0);
+    await expect.poll(async () => towerCounter.textContent()).toBe('2');
+    await expect.poll(getHeight).toBe(2);
 
-    // 무너뜨리기 버튼 / R 키도 오류 없이 동작 (빈 탑 상태)
+    // 무너뜨리기 버튼으로 0이 된다
     await page.locator('#stone-tower-collapse-button').click();
     await expect.poll(getHeight).toBe(0);
+    await expect.poll(async () => towerCounter.textContent(), { timeout: 10000 }).toBe('0');
+
+    // 다시 쌓고 R 키로 무너뜨린다
+    await towerButton.click();
+    await expect.poll(getHeight).toBe(1);
     await page.keyboard.press('r');
     await expect.poll(getHeight).toBe(0);
+
+    // 2층에서 5% 확률에 걸리는 경우 (난수 0.03 < 0.05) → 쌓자마자 무너진다
+    await page.evaluate(() => { Math.random = () => 0.03; });
+    await towerButton.click(); // 1층: 0% → 안전
+    await expect.poll(getHeight).toBe(1);
+    await towerButton.click(); // 2층: 5%, 0.03 < 0.05 → 무너짐
+    await expect.poll(getHeight).toBe(0);
+    await expect.poll(async () => towerCounter.textContent()).toBe('💥');
 
     // 원래 Math.random 복구
     await page.evaluate(() => { Math.random = window.__origRandom; });

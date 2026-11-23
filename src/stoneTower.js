@@ -8,10 +8,10 @@ const GRAVITY = 9.8;
 
 /**
  * n층(1-based)을 쌀 때 무너질 확률.
- * 1층 100%, 2층부터 층마다 5%씩 감소, 0% 아래로는 안내려간다.
+ * 1층은 100% 안전(0%), 2층부터 층마다 5%씩 증가, 100%를 넘지 않는다.
  */
 function collapseChanceForLayer(layer) {
-  return Math.max(0, 1 - COLLAPSE_CHANCE_PER_LAYER * (layer - 1));
+  return Math.min(1, COLLAPSE_CHANCE_PER_LAYER * (layer - 1));
 }
 
 function createStone(material, size) {
@@ -32,7 +32,7 @@ function createStone(material, size) {
 /**
  * 해변 돌탑 쌓기 콘텐츠.
  * - 돌은 제한 없이 쌓인다 (높이 제한 없음)
- * - 쌓을 때마다 collapseChance 확률로 탑이 무너진다
+ * - 쌓을 때 층별로 무너질 확률이 달라진다 (1층 0%, 층마다 +5%, 최대 100%)
  * - 무너지면 돌들이 물리적으로 튕기며 떨어지는 애니메이션 후 제거된다
  */
 export function createStoneTower({
