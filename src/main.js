@@ -1892,23 +1892,39 @@ const stoneTowerButton = document.getElementById('stone-tower-button');
 const stoneTowerCounter = document.getElementById('stone-tower-counter');
 
 function refreshStoneTowerCounter() {
-  const { height, maxHeight } = stoneTower.getState();
-  stoneTowerCounter.textContent = `${height}/${maxHeight}`;
+  stoneTowerCounter.textContent = `${stoneTower.getState().height}`;
+}
+
+let stoneTowerFlashTimer = null;
+
+function flashStoneTowerCounter(text) {
+  stoneTowerCounter.textContent = text;
+
+  if (stoneTowerFlashTimer) clearTimeout(stoneTowerFlashTimer);
+
+  stoneTowerFlashTimer = setTimeout(() => {
+    refreshStoneTowerCounter();
+  }, 900);
 }
 
 function buildStoneTowerStone() {
   if (!stoneTower.isNear(player.position)) return;
 
-  if (stoneTower.addStone()) {
-    refreshStoneTowerCounter();
+  stoneTower.addStone();
+  refreshStoneTowerCounter();
+
+  // 쌓을 때마다 일정 확률로 돌탑이 무너진다
+  if (Math.random() < stoneTower.collapseChance) {
+    stoneTower.collapse();
+    flashStoneTowerCounter('💥');
   }
 }
 
-function resetStoneTower() {
+function collapseStoneTower() {
   if (!stoneTower.isNear(player.position)) return;
 
-  stoneTower.reset();
-  refreshStoneTowerCounter();
+  stoneTower.collapse();
+  flashStoneTowerCounter('💥');
 }
 
 stoneTowerButton.addEventListener('click', (event) => {
@@ -1918,10 +1934,10 @@ stoneTowerButton.addEventListener('click', (event) => {
   event.currentTarget.blur();
 });
 
-const stoneTowerResetButton = document.getElementById('stone-tower-reset-button');
-stoneTowerResetButton.addEventListener('click', (event) => {
+const stoneTowerCollapseButton = document.getElementById('stone-tower-collapse-button');
+stoneTowerCollapseButton.addEventListener('click', (event) => {
   event.preventDefault();
-  resetStoneTower();
+  collapseStoneTower();
   event.currentTarget.blur();
 });
 
@@ -1952,7 +1968,7 @@ window.addEventListener('keydown', (e) => {
     return;
   }
 
-  // 해변 돌탑 리셋 (R 키)
+  // 해변 돌탑 리셋 (R 키) → 무너뜨리기
   if (
     e.key.toLowerCase() === 'r' &&
     !e.repeat &&
@@ -1960,7 +1976,7 @@ window.addEventListener('keydown', (e) => {
     stoneTower.isNear(player.position)
   ) {
     e.preventDefault();
-    resetStoneTower();
+    collapseStoneTower();
     return;
   }
 
@@ -2411,7 +2427,7 @@ function animate() {
     isNearLunchDog ? 'flex' : 'none';
 
   // 해변 돌탑: 마커 애니메이션 및 근접 시 버튼 표시
-  stoneTower.update(clock.elapsedTime);
+  stoneTower.update(delta, clock.elapsedTime);
   stoneTowerButtons.style.display =
     stoneTower.isNear(player.position) ? 'flex' : 'none';
 

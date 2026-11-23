@@ -2,8 +2,9 @@ import * as THREE from 'three';
 
 const STONE_COLOR = 0x9a9186;
 const MARKER_COLOR = 0xffd54f;
-const DEFAULT_MAX_HEIGHT = 7;
 const INTERACT_RADIUS = 3.2;
+const COLLAPSE_CHANCE = 0.5;
+const GRAVITY = 9.8;
 
 function createStone(material, size) {
   const stone = new THREE.Mesh(
@@ -15,18 +16,20 @@ function createStone(material, size) {
   stone.receiveShadow = true;
   stone.rotation.y = Math.random() * Math.PI * 2;
   stone.rotation.z = (Math.random() - 0.5) * 0.15;
+  stone.userData.size = size;
 
   return stone;
 }
 
 /**
  * 해변 돌탑 쌓기 콘텐츠.
- * 그룹 생성 / 돌 추가 / 근접 판정 / 상태 조회를 한곳에 묶어
- * 전역 스코프 오염 없이 재사용할 수 있게 한다.
+ * - 돌은 제한 없이 쌓인다 (높이 제한 없음)
+ * - 쌓을 때마다 collapseChance 확률로 탑이 무너진다
+ * - 무너지면 돌들이 물리적으로 튕기며 떨어지는 애니메이션 후 제거된다
  */
 export function createStoneTower({
   position = { x: -10, z: -23 },
-  maxHeight = DEFAULT_MAX_HEIGHT
+  collapseChance = COLLAPSE_CHANCE
 } = {}) {
   const group = new THREE.Group();
   group.name = 'stone-tower';
@@ -57,12 +60,12 @@ export function createStoneTower({
   group.add(marker);
 
   const stones = [];
+  let falling = [];
 
   function addStone() {
-    if (stones.length >= maxHeight) return false;
-
     const index = stones.length;
-    const size = 1.1 - index * 0.08;
+    // 높이 제한 없이 쌓되, 돌 크기는 점점 줄어들고 최소 크기에서 멈춘다
+    const size = Math.max(0.45, 1.1 - index * 0.08);
     const stone = createStone(stoneMaterial, size);
 
     stone.position.set(
@@ -77,12 +80,30 @@ export function createStoneTower({
     return true;
   }
 
-  function reset() {
+  /**
+   * 탑을 무너뜨린다. 쌓인 돌 전체가 랜덤한 방향으로 튕기며 떨어지고,
+   * 애니메이션이 끝나면 제거된다. 높이는 즉시 0이 된다.
+   */
+  function collapse() {
     for (const stone of stones) {
-      group.remove(stone);
-      stone.geometry.dispose();
+      falling.push({
+        mesh: stone,
+        vel: new THREE.Vector3(
+          (Math.random() - 0.5) * 3.2,
+          1.5 + Math.random() * 2.5,
+          (Math.random() - 0.5) * 3.2
+        ),
+        angVel: new THREE.Vector3(
+          (Math.random() - 0.5) * 7,
+          (Math.random() - 0.5) * 7,
+          (Math.random() - 0.5) * 7
+        ),
+        restY: ((stone.userData.size * 0.6) / 2) + 0.16
+      });
     }
+
     stones.length = 0;
+    return true;
   }
 
   function isNear(playerPosition) {
@@ -94,23 +115,42 @@ export function createStoneTower({
     return Math.hypot(dx, dz) <= INTERACT_RADIUS;
   }
 
-  function update(elapsedTime) {
+  function update(delta, elapsedTime) {
     marker.position.y = 2.4 + Math.sin(elapsedTime * 2) * 0.15;
     marker.rotation.y = elapsedTime * 1.2;
+
+    // 무너지는 돌 물리 애니메이션
+    if (falling.length > 0) {
+      for (let i = falling.length - 1; i >= 0; i -= 1) {
+        const f = falling[i];
+
+        f.vel.y -= GRAVITY * delta;
+        f.mesh.position.addScaledVector(f.vel, delta);
+        f.mesh.rotation.x += f.angVel.x * delta;
+        f.mesh.rotation.y += f.angVel.y * delta;
+        f.mesh.rotation.z += f.angVel.z * delta;
+
+        if (f.mesh.position.y <= f.restY) {
+          group.remove(f.mesh);
+          f.mesh.geometry.dispose();
+          falling.splice(i, 1);
+        }
+      }
+    }
   }
 
   function getState() {
-    return { height: stones.length, maxHeight };
+    return { height: stones.length, collapsing: falling.length > 0 };
   }
 
   return {
     group,
     addStone,
-    reset,
+    collapse,
     isNear,
     update,
     getState,
-    maxHeight,
+    collapseChance,
     interactRadius: INTERACT_RADIUS
   };
 }
