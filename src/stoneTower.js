@@ -77,6 +77,14 @@ export function createStoneTower({
     return true;
   }
 
+  function reset() {
+    for (const stone of stones) {
+      group.remove(stone);
+      stone.geometry.dispose();
+    }
+    stones.length = 0;
+  }
+
   function isNear(playerPosition) {
     if (!playerPosition) return false;
 
@@ -98,6 +106,7 @@ export function createStoneTower({
   return {
     group,
     addStone,
+    reset,
     isNear,
     update,
     getState,

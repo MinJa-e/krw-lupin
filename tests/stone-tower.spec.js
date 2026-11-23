@@ -32,6 +32,18 @@ test('해변 돌탑이 오류 없이 생성되고 상호작용으로 돌이 쌓�
     await page.keyboard.press('e');
     await expect.poll(async () => towerCounter.textContent()).toBe('2/7');
     await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getStoneTowerState().height)).toBe(2);
+
+    // 리셋 버튼으로 0으로 돌아간다
+    await page.locator('#stone-tower-reset-button').click();
+    await expect.poll(async () => towerCounter.textContent()).toBe('0/7');
+    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getStoneTowerState().height)).toBe(0);
+
+    // 다시 쌓고 R 키로 리셋된다
+    await towerButton.click();
+    await expect.poll(async () => towerCounter.textContent()).toBe('1/7');
+    await page.keyboard.press('r');
+    await expect.poll(async () => towerCounter.textContent()).toBe('0/7');
+    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getStoneTowerState().height)).toBe(0);
   }
 
   expect(pageErrors).toEqual([]);

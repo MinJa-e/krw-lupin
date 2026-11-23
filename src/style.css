@@ -283,6 +283,10 @@ canvas {
   transform: scale(0.95);
 }
 
+#stone-tower-reset-button {
+  background: #b0bec5 !important;
+}
+
 #stone-tower-counter {
   padding: 6px 10px;
   border-radius: 12px;

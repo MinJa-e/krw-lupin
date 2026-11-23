@@ -1904,10 +1904,24 @@ function buildStoneTowerStone() {
   }
 }
 
+function resetStoneTower() {
+  if (!stoneTower.isNear(player.position)) return;
+
+  stoneTower.reset();
+  refreshStoneTowerCounter();
+}
+
 stoneTowerButton.addEventListener('click', (event) => {
   event.preventDefault();
   buildStoneTowerStone();
   // 클릭 후 버튼 포커스를 해제해 E/Space 등 키보드 입력이 막히지 않게 한다
+  event.currentTarget.blur();
+});
+
+const stoneTowerResetButton = document.getElementById('stone-tower-reset-button');
+stoneTowerResetButton.addEventListener('click', (event) => {
+  event.preventDefault();
+  resetStoneTower();
   event.currentTarget.blur();
 });
 
@@ -1935,6 +1949,18 @@ window.addEventListener('keydown', (e) => {
   ) {
     e.preventDefault();
     buildStoneTowerStone();
+    return;
+  }
+
+  // 해변 돌탑 리셋 (R 키)
+  if (
+    e.key.toLowerCase() === 'r' &&
+    !e.repeat &&
+    !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(document.activeElement.tagName) &&
+    stoneTower.isNear(player.position)
+  ) {
+    e.preventDefault();
+    resetStoneTower();
     return;
   }
 
