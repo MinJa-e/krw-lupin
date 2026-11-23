@@ -1880,6 +1880,16 @@ lottoInteractionButton.addEventListener('click', () => {
 window.addEventListener('keydown', (e) => {
   keys[e.key.toLowerCase()] = true;
 
+  // 앉기/일어서기: C키 또는 Ctrl
+  if (
+    !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(document.activeElement.tagName) &&
+    !e.repeat &&
+    (e.key.toLowerCase() === 'c' || e.code === 'ControlLeft' || e.code === 'ControlRight')
+  ) {
+    e.preventDefault();
+    setSitting(!isSitting);
+  }
+
   // 강아지에게 점심 메뉴 추천받기
   if (
     e.key.toLowerCase() === 'e' &&
