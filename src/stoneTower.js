@@ -3,8 +3,16 @@ import * as THREE from 'three';
 const STONE_COLOR = 0x9a9186;
 const MARKER_COLOR = 0xffd54f;
 const INTERACT_RADIUS = 3.2;
-const COLLAPSE_CHANCE = 0.5;
+const COLLAPSE_CHANCE_PER_LAYER = 0.05;
 const GRAVITY = 9.8;
+
+/**
+ * n층(1-based)을 쌀 때 무너질 확률.
+ * 1층 100%, 2층부터 층마다 5%씩 감소, 0% 아래로는 안내려간다.
+ */
+function collapseChanceForLayer(layer) {
+  return Math.max(0, 1 - COLLAPSE_CHANCE_PER_LAYER * (layer - 1));
+}
 
 function createStone(material, size) {
   const stone = new THREE.Mesh(
@@ -28,8 +36,7 @@ function createStone(material, size) {
  * - 무너지면 돌들이 물리적으로 튕기며 떨어지는 애니메이션 후 제거된다
  */
 export function createStoneTower({
-  position = { x: -10, z: -23 },
-  collapseChance = COLLAPSE_CHANCE
+  position = { x: -10, z: -23 }
 } = {}) {
   const group = new THREE.Group();
   group.name = 'stone-tower';
@@ -150,7 +157,7 @@ export function createStoneTower({
     isNear,
     update,
     getState,
-    collapseChance,
+    getCollapseChance: collapseChanceForLayer,
     interactRadius: INTERACT_RADIUS
   };
 }

@@ -1526,7 +1526,8 @@ if (import.meta.env.MODE === 'e2e') {
       player.position.set(x, 0, z);
       isMovingToTarget = false;
     },
-    getStoneTowerState: () => stoneTower.getState()
+    getStoneTowerState: () => stoneTower.getState(),
+    getStoneTowerCollapseChance: (layer) => stoneTower.getCollapseChance(layer)
   };
 }
 
@@ -1911,10 +1912,14 @@ function buildStoneTowerStone() {
   if (!stoneTower.isNear(player.position)) return;
 
   stoneTower.addStone();
+
+  // 방금 쌓은 층(1-based)에 따른 무너질 확률로 판정
+  const layer = stoneTower.getState().height;
+  const chance = stoneTower.getCollapseChance(layer);
+
   refreshStoneTowerCounter();
 
-  // 쌓을 때마다 일정 확률로 돌탑이 무너진다
-  if (Math.random() < stoneTower.collapseChance) {
+  if (Math.random() < chance) {
     stoneTower.collapse();
     flashStoneTowerCounter('💥');
   }

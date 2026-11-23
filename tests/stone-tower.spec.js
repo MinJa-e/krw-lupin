@@ -16,6 +16,7 @@ test('해변 돌탑이 오류 없이 생성되고 상호작용으로 돌이 쌓�
 
   if (hasE2EDiagnostics) {
     const getHeight = () => page.evaluate(() => window.__krwLupinE2E.getStoneTowerState().height);
+    const getChance = (layer) => page.evaluate((l) => window.__krwLupinE2E.getStoneTowerCollapseChance(l), layer);
 
     // 초기 상태는 0개
     await expect.poll(getHeight).toBe(0);
@@ -25,35 +26,31 @@ test('해변 돌탑이 오류 없이 생성되고 상호작용으로 돌이 쌓�
     await expect(towerButton).toBeVisible();
     await expect(towerCounter).toHaveText('0');
 
-    // 무너지지 않는 경우로 고정 (Math.random >= 0.5)
-    await page.evaluate(() => { window.__origRandom = Math.random; Math.random = () => 0.99; });
+    // 층별 무너질 확률 공식 검증: 1층 100%, 2층 95%, 3층 90%, 21층 0%, 그 이상 0%
+    await expect.poll(() => getChance(1)).toBe(1);
+    await expect.poll(() => getChance(2)).toBeCloseTo(0.95, 5);
+    await expect.poll(() => getChance(3)).toBeCloseTo(0.9, 5);
+    await expect.poll(() => getChance(21)).toBe(0);
+    await expect.poll(() => getChance(50)).toBe(0);
 
-    // 버튼 클릭으로 돌을 쌓는다
-    await towerButton.click();
-    await expect.poll(async () => towerCounter.textContent()).toBe('1');
-    await expect.poll(getHeight).toBe(1);
+    // 원래 Math.random 백업
+    await page.evaluate(() => { window.__origRandom = Math.random; });
 
-    // E 키로도 쌓인다 (제한 없이 계속 쌓임)
-    await page.keyboard.press('e');
-    await expect.poll(async () => towerCounter.textContent()).toBe('2');
-    await expect.poll(getHeight).toBe(2);
-
-    // 무너뜨리기 버튼으로 0이 된다
-    await page.locator('#stone-tower-collapse-button').click();
-    await expect.poll(getHeight).toBe(0);
-    await expect.poll(async () => towerCounter.textContent(), { timeout: 10000 }).toBe('0');
-
-    // 다시 쌓고 R 키로 무너뜨린다
-    await towerButton.click();
-    await expect.poll(getHeight).toBe(1);
-    await page.keyboard.press('r');
-    await expect.poll(getHeight).toBe(0);
-
-    // 무너지는 경우로 고정 (Math.random < 0.5) → 쌓자마자 50% 무너짐 로직 발동
-    await page.evaluate(() => { Math.random = () => 0.1; });
+    // 1층은 100% → 어떤乱수でも 무조건 무너진다
+    await page.evaluate(() => { Math.random = () => 0.99; });
     await towerButton.click();
     await expect.poll(getHeight).toBe(0);
     await expect.poll(async () => towerCounter.textContent()).toBe('💥');
+
+    // E 키로 쌓아도 1층 100%라 무너진다
+    await page.keyboard.press('e');
+    await expect.poll(getHeight).toBe(0);
+
+    // 무너뜨리기 버튼 / R 키도 오류 없이 동작 (빈 탑 상태)
+    await page.locator('#stone-tower-collapse-button').click();
+    await expect.poll(getHeight).toBe(0);
+    await page.keyboard.press('r');
+    await expect.poll(getHeight).toBe(0);
 
     // 원래 Math.random 복구
     await page.evaluate(() => { Math.random = window.__origRandom; });
