@@ -251,6 +251,48 @@ canvas {
   background: #a9d5ff !important;
 }
 
+#stone-tower-buttons {
+  position: fixed;
+  left: 50%;
+  bottom: 150px;
+  transform: translateX(-50%);
+  z-index: 5000;
+
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+#stone-tower-buttons button {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 20px;
+
+  background: #ffd54f;
+  color: #333;
+  font-size: 14px;
+  font-weight: bold;
+
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+#stone-tower-buttons button:active {
+  transform: scale(0.95);
+}
+
+#stone-tower-counter {
+  padding: 6px 10px;
+  border-radius: 12px;
+
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 13px;
+  font-weight: bold;
+}
+
 @media (pointer: coarse) {
   #dog-interaction-buttons {
     bottom: 90px;
@@ -260,5 +302,15 @@ canvas {
   #dog-interaction-buttons button {
     padding: 10px 12px;
     font-size: 12px;
+  }
+
+  #stone-tower-buttons {
+    bottom: 140px;
+    gap: 6px;
+  }
+
+  #stone-tower-buttons button {
+    padding: 11px 14px;
+    font-size: 13px;
   }
 }

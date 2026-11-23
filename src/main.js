@@ -1,6 +1,7 @@
 
 import * as THREE from 'three';
 import { io } from 'socket.io-client';
+import { createStoneTower } from './stoneTower.js';
 import './style.css';
 
 
@@ -1247,6 +1248,10 @@ lunchDog.traverse((obj) => {
 // 장면에 추가
 scene.add(lunchDog);
 
+// 해변 돌탑 쌓기 콘텐츠
+const stoneTower = createStoneTower();
+scene.add(stoneTower.group);
+
 
 // 아바타는 외형 판별기와 포즈 애니메이터를 조합합니다.
 // 새 모델은 userData.avatarType을 지정하거나 matches로 판별 규칙을 등록하면 전용 포즈가 자동 적용됩니다.
@@ -1516,7 +1521,12 @@ if (import.meta.env.MODE === 'e2e') {
       pose: activeAvatarController.pose,
       sitProgress: activeAvatarController.model.userData.poseProgress ?? 0
     }),
-    detectCompanionType: () => detectAvatarType(lunchDog)
+    detectCompanionType: () => detectAvatarType(lunchDog),
+    teleportPlayer: (x, z) => {
+      player.position.set(x, 0, z);
+      isMovingToTarget = false;
+    },
+    getStoneTowerState: () => stoneTower.getState()
   };
 }
 
@@ -1876,6 +1886,32 @@ lottoInteractionButton.addEventListener('click', () => {
 });
 
 
+// 해변 돌탑 쌓기 버튼
+const stoneTowerButtons = document.getElementById('stone-tower-buttons');
+const stoneTowerButton = document.getElementById('stone-tower-button');
+const stoneTowerCounter = document.getElementById('stone-tower-counter');
+
+function refreshStoneTowerCounter() {
+  const { height, maxHeight } = stoneTower.getState();
+  stoneTowerCounter.textContent = `${height}/${maxHeight}`;
+}
+
+function buildStoneTowerStone() {
+  if (!stoneTower.isNear(player.position)) return;
+
+  if (stoneTower.addStone()) {
+    refreshStoneTowerCounter();
+  }
+}
+
+stoneTowerButton.addEventListener('click', (event) => {
+  event.preventDefault();
+  buildStoneTowerStone();
+  // 클릭 후 버튼 포커스를 해제해 E/Space 등 키보드 입력이 막히지 않게 한다
+  event.currentTarget.blur();
+});
+
+
 
 window.addEventListener('keydown', (e) => {
   keys[e.key.toLowerCase()] = true;
@@ -1888,6 +1924,18 @@ window.addEventListener('keydown', (e) => {
   ) {
     e.preventDefault();
     setSitting(!isSitting);
+  }
+
+  // 해변 돌탑 쌓기 (E 키)
+  if (
+    e.key.toLowerCase() === 'e' &&
+    !e.repeat &&
+    !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(document.activeElement.tagName) &&
+    stoneTower.isNear(player.position)
+  ) {
+    e.preventDefault();
+    buildStoneTowerStone();
+    return;
   }
 
   // 강아지에게 점심 메뉴 추천받기
@@ -2335,6 +2383,11 @@ function animate() {
 
   dogInteractionButtons.style.display =
     isNearLunchDog ? 'flex' : 'none';
+
+  // 해변 돌탑: 마커 애니메이션 및 근접 시 버튼 표시
+  stoneTower.update(clock.elapsedTime);
+  stoneTowerButtons.style.display =
+    stoneTower.isNear(player.position) ? 'flex' : 'none';
 
   // 마우스 방향에 따라 카메라 회전
   const target = player.position.clone();
