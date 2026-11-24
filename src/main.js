@@ -1889,6 +1889,7 @@ lottoInteractionButton.addEventListener('click', () => {
 
 // 해변 돌탑 쌓기 버튼
 const stoneTowerButtons = document.getElementById('stone-tower-buttons');
+const isCoarsePointer = window.matchMedia('(pointer: coarse)');
 const stoneTowerButton = document.getElementById('stone-tower-button');
 const stoneTowerCounter = document.getElementById('stone-tower-counter');
 
@@ -2433,8 +2434,24 @@ function animate() {
 
   // 해변 돌탑: 무너짐 애니메이션 및 근접 시 버튼 표시
   stoneTower.update(delta);
+  const nearStoneTowerNow = stoneTower.isNear(player.position);
   stoneTowerButtons.style.display =
-    stoneTower.isNear(player.position) ? 'flex' : 'none';
+    nearStoneTowerNow ? 'flex' : 'none';
+
+  // 모바일: 버튼 스택의 윗선을 채팅창 윗선과 맞춘다 (채팅 숨김 시 기본 위치 유지)
+  if (
+    nearStoneTowerNow &&
+    isCoarsePointer.matches &&
+    !chat.classList.contains('hidden')
+  ) {
+    const chatTopFromBottom =
+      window.innerHeight - chat.getBoundingClientRect().top;
+    const stackHeight = stoneTowerButtons.offsetHeight;
+    stoneTowerButtons.style.bottom = `${Math.max(
+      145,
+      Math.round(chatTopFromBottom - stackHeight)
+    )}px`;
+  }
 
   // 마우스 방향에 따라 카메라 회전
   const target = player.position.clone();
