@@ -51,6 +51,21 @@
   <span id="stone-tower-counter">0</span>
 </div>
 
+<!-- 캐릭터 색상 꾸미기 -->
+<button id="appearance-button" type="button" aria-label="캐릭터 꾸미기">🎨</button>
+<div id="appearance-panel" style="display: none;">
+  <div class="appearance-panel-title">🎨 캐릭터 꾸미기</div>
+  <label>피부 <input type="color" id="appearance-skin" value="#ffd0ad"></label>
+  <label>머리 <input type="color" id="appearance-hair" value="#493126"></label>
+  <label>상의 <input type="color" id="appearance-shirt" value="#ffffff"></label>
+  <label>하의 <input type="color" id="appearance-pants" value="#303d59"></label>
+  <label>신발 <input type="color" id="appearance-shoes" value="#f4f1e9"></label>
+  <div class="appearance-panel-actions">
+    <button id="appearance-reset" type="button">초기화</button>
+    <button id="appearance-close" type="button">닫기</button>
+  </div>
+</div>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 

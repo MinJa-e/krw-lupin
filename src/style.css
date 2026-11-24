@@ -297,6 +297,109 @@ canvas {
   font-weight: bold;
 }
 
+/* 캐릭터 색상 꾸미기 */
+#appearance-button {
+  position: fixed;
+  right: 16px;
+  top: 12px;
+  z-index: 4500;
+
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+
+  background: rgba(18, 45, 55, 0.78);
+  color: white;
+  font-size: 17px;
+
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#appearance-button:active {
+  transform: scale(0.93);
+}
+
+#appearance-panel {
+  position: fixed;
+  right: 12px;
+  top: 56px;
+  z-index: 4600;
+
+  width: 200px;
+  padding: 12px;
+  border-radius: 12px;
+
+  background: rgba(20, 30, 40, 0.92);
+  color: white;
+  font-size: 13px;
+
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.appearance-panel-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+#appearance-panel label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+#appearance-panel input[type="color"] {
+  width: 44px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+
+.appearance-panel-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.appearance-panel-actions button {
+  flex: 1;
+  padding: 7px 0;
+  border: none;
+  border-radius: 8px;
+
+  background: #5689d8;
+  color: white;
+  font-size: 12px;
+
+  cursor: pointer;
+}
+
+#appearance-reset {
+  background: #8a8f98;
+}
+
+@media (pointer: coarse) {
+  #appearance-button {
+    right: 10px;
+    top: 10px;
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+  }
+
+  #appearance-panel {
+    right: 8px;
+    top: 50px;
+  }
+}
+
 @media (pointer: coarse) {
   #dog-interaction-buttons {
     bottom: 90px;

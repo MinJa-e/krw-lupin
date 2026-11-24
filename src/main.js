@@ -2,6 +2,12 @@
 import * as THREE from 'three';
 import { io } from 'socket.io-client';
 import { createStoneTower } from './stoneTower.js';
+import {
+  DEFAULT_APPEARANCE,
+  loadAppearance,
+  saveAppearance,
+  applyAppearanceToModel
+} from './appearance.js';
 import './style.css';
 
 
@@ -82,6 +88,9 @@ socket.on('connect', () => {
   socket.emit('setNickname', {
     nickname: chatNickname.value.trim() || '플레이어'
   });
+
+  // 내 캐릭터 색상도 등록 (다른 플레이어에게 보이도록)
+  socket.emit('setAppearance', appearance);
 });
 
 
@@ -985,6 +994,17 @@ const shoeMat = new THREE.MeshStandardMaterial({ color: 0xf4f1e9 });
 const eyeMat = new THREE.MeshStandardMaterial({ color: 0x252525 });
 const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
 
+// 캐릭터 색상 꾸미기: 공유 템플릿 재질 → 부위 매핑과 현재 상태
+const appearanceMaterialToPart = new Map([
+  [skinMat, 'skin'],
+  [hairMat, 'hair'],
+  [shirtMat, 'shirt'],
+  [pantsMat, 'pants'],
+  [shoeMat, 'shoes']
+]);
+
+const appearance = loadAppearance();
+
 // 구체 생성 함수
 function makeSphere(parent, radius, position, material, scale = [1, 1, 1]) {
   const mesh = new THREE.Mesh(
@@ -1432,6 +1452,9 @@ let activeAvatarController = createAvatarController(humanAvatarTemplate.clone(tr
 player.add(activeAvatarController.model);
 scene.add(player);
 
+// 저장된 꾸미기 상태를 내 아바타에 적용
+applyAppearanceToModel(activeAvatarController.model, appearance, appearanceMaterialToPart);
+
 // 외부 모델이 들어오면 등록된 matches/메타데이터로 타입을 판별해 해당 애니메이터를 붙입니다.
 function setPlayerAvatarModel(model) {
   if (!model?.isObject3D) {
@@ -1527,7 +1550,20 @@ if (import.meta.env.MODE === 'e2e') {
       isMovingToTarget = false;
     },
     getStoneTowerState: () => stoneTower.getState(),
-    getStoneTowerCollapseChance: (layer) => stoneTower.getCollapseChance(layer)
+    getStoneTowerCollapseChance: (layer) => stoneTower.getCollapseChance(layer),
+    getAppearance: () => ({ ...appearance }),
+    getAvatarPartColor: (part) => {
+      let hex = null;
+
+      activeAvatarController.model.traverse((obj) => {
+        if (hex || !obj.isMesh) return;
+        if (obj.userData.appearancePart === part) {
+          hex = '#' + obj.material.color.getHexString();
+        }
+      });
+
+      return hex;
+    }
   };
 }
 
@@ -1536,6 +1572,8 @@ if (import.meta.env.MODE === 'e2e') {
 // 다른 플레이어 관리
 const remotePlayers = {};
 const remoteAvatarControllers = {};
+// 상대방 꾸미기 상태 (아바타 교체 시에도 재적용하기 위해 보관)
+const remoteAppearances = {};
 // 상대방 닉네임 HTML 요소 관리
 const remotePlayerNames = {};
 
@@ -1750,6 +1788,14 @@ function createRemotePlayer(data) {
   remoteAvatarControllers[data.id] = remoteAvatar;
   remotePlayerNames[data.id] = nicknameLabel;
 
+  // 서버가 전달한 꾸미기 상태 적용
+  if (data.appearance) {
+    remoteAppearances[data.id] = data.appearance;
+  }
+  if (remoteAppearances[data.id]) {
+    applyAppearanceToModel(remoteAvatar.model, remoteAppearances[data.id], appearanceMaterialToPart);
+  }
+
   console.log('상대방 캐릭터 생성:', data.id);
 }
 
@@ -1763,6 +1809,11 @@ function setRemoteAvatarType(playerId, type) {
   remotePlayer.remove(currentAvatar.model);
   remotePlayer.add(nextAvatar.model);
   remoteAvatarControllers[playerId] = nextAvatar;
+
+  // 아바타가 교체되면 저장된 꾸미기 상태를 다시 입힌다
+  if (remoteAppearances[playerId]) {
+    applyAppearanceToModel(nextAvatar.model, remoteAppearances[playerId], appearanceMaterialToPart);
+  }
 }
 
 
@@ -1776,6 +1827,18 @@ socket.on('currentPlayers', (players) => {
 // 새로운 플레이어 접속
 socket.on('newPlayer', (data) => {
   createRemotePlayer(data);
+});
+
+// 다른 플레이어가 색상을 바꿨을 때
+socket.on('appearanceChanged', (data) => {
+  if (!data?.id || !data.appearance) return;
+
+  remoteAppearances[data.id] = data.appearance;
+
+  const remoteAvatar = remoteAvatarControllers[data.id];
+  if (remoteAvatar) {
+    applyAppearanceToModel(remoteAvatar.model, data.appearance, appearanceMaterialToPart);
+  }
 });
 
 // 플레이어 퇴장
@@ -1944,6 +2007,67 @@ const stoneTowerCollapseButton = document.getElementById('stone-tower-collapse-b
 stoneTowerCollapseButton.addEventListener('click', (event) => {
   event.preventDefault();
   collapseStoneTower();
+  event.currentTarget.blur();
+});
+
+
+// 캐릭터 색상 꾸미기 UI
+const appearanceButton = document.getElementById('appearance-button');
+const appearancePanel = document.getElementById('appearance-panel');
+const appearanceCloseButton = document.getElementById('appearance-close');
+const appearanceResetButton = document.getElementById('appearance-reset');
+const appearanceInputs = {
+  skin: document.getElementById('appearance-skin'),
+  hair: document.getElementById('appearance-hair'),
+  shirt: document.getElementById('appearance-shirt'),
+  pants: document.getElementById('appearance-pants'),
+  shoes: document.getElementById('appearance-shoes')
+};
+
+function syncAppearanceInputs() {
+  for (const [part, input] of Object.entries(appearanceInputs)) {
+    input.value = appearance[part];
+  }
+}
+
+function applyOwnAppearance() {
+  applyAppearanceToModel(activeAvatarController.model, appearance, appearanceMaterialToPart);
+  saveAppearance(appearance);
+
+  if (socket.connected) {
+    socket.emit('setAppearance', appearance);
+  }
+}
+
+syncAppearanceInputs();
+
+appearanceButton.addEventListener('click', (event) => {
+  event.preventDefault();
+  const isOpen = appearancePanel.style.display === 'block';
+  appearancePanel.style.display = isOpen ? 'none' : 'block';
+  event.currentTarget.blur();
+});
+
+appearanceCloseButton.addEventListener('click', (event) => {
+  event.preventDefault();
+  appearancePanel.style.display = 'none';
+  event.currentTarget.blur();
+});
+
+for (const [part, input] of Object.entries(appearanceInputs)) {
+  input.addEventListener('input', () => {
+    if (!/^#[0-9a-fA-F]{6}$/.test(input.value)) return;
+
+    appearance[part] = input.value;
+    applyOwnAppearance();
+  });
+}
+
+appearanceResetButton.addEventListener('click', (event) => {
+  event.preventDefault();
+  Object.assign(appearance, DEFAULT_APPEARANCE);
+  syncAppearanceInputs();
+  applyOwnAppearance();
   event.currentTarget.blur();
 });
 

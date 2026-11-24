@@ -54,6 +54,28 @@ io.on('connection', (socket) => {
     });
   });
 
+  // 캐릭터 색상 저장 및 전파
+  socket.on('setAppearance', (data) => {
+    if (!players[socket.id]) return;
+
+    const appearance = {};
+    const validParts = ['skin', 'hair', 'shirt', 'pants', 'shoes'];
+
+    validParts.forEach((part) => {
+      const value = data?.[part];
+      if (typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value)) {
+        appearance[part] = value;
+      }
+    });
+
+    players[socket.id].appearance = appearance;
+
+    io.emit('appearanceChanged', {
+      id: socket.id,
+      appearance
+    });
+  });
+
 
   // 신규 플레이어 등록
   players[socket.id] = {
