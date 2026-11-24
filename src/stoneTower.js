@@ -75,13 +75,20 @@ export function createStoneTower({
 
   function addStone() {
     const index = stones.length;
-    // 돌 시작 크기 0.65 → 층수 ↑할수록 0.04씩 줄어듦, 최소 0.35
-    const size = Math.max(0.35, 0.65 - index * 0.04);
+    // 돌 시작 크기 0.65 → 층수 ↑할수록 0.05씩 줄어듦, 최소 0.35
+    const size = Math.max(0.35, 0.65 - index * 0.05);
     const stone = createStone(stoneMaterial, size);
+    const stoneHeight = size * 0.6;
+
+    // 아래 쌓인 돌들의 실제 높이 합 위에 얹는다 (살짝 겹치게 해서 틈 없이)
+    let baseY = 0.12;
+    for (const s of stones) {
+      baseY += s.userData.size * 0.6 * 0.92;
+    }
 
     stone.position.set(
       (Math.random() - 0.5) * 0.12,
-      0.12 + index * 0.5,
+      baseY + stoneHeight / 2,
       (Math.random() - 0.5) * 0.12
     );
 
