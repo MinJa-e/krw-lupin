@@ -2438,19 +2438,30 @@ function animate() {
   stoneTowerButtons.style.display =
     nearStoneTowerNow ? 'flex' : 'none';
 
-  // 모바일: 버튼 스택의 윗선을 채팅창 윗선과 맞춘다 (채팅 숨김 시 기본 위치 유지)
-  if (
-    nearStoneTowerNow &&
-    isCoarsePointer.matches &&
-    !chat.classList.contains('hidden')
-  ) {
-    const chatTopFromBottom =
-      window.innerHeight - chat.getBoundingClientRect().top;
-    const stackHeight = stoneTowerButtons.offsetHeight;
-    stoneTowerButtons.style.bottom = `${Math.max(
-      145,
-      Math.round(chatTopFromBottom - stackHeight)
-    )}px`;
+  // 모바일: 채팅 표시 중이면 오른쪽 스택 + 윗선 정렬, 숨김 중이면 원래대로 중앙 가로 배치
+  if (nearStoneTowerNow && isCoarsePointer.matches) {
+    if (chat.classList.contains('hidden')) {
+      stoneTowerButtons.style.left = '50%';
+      stoneTowerButtons.style.right = 'auto';
+      stoneTowerButtons.style.transform = 'translateX(-50%)';
+      stoneTowerButtons.style.flexDirection = 'row';
+      stoneTowerButtons.style.alignItems = 'center';
+      stoneTowerButtons.style.bottom = '140px';
+    } else {
+      stoneTowerButtons.style.left = '';
+      stoneTowerButtons.style.right = '10px';
+      stoneTowerButtons.style.transform = 'none';
+      stoneTowerButtons.style.flexDirection = 'column';
+      stoneTowerButtons.style.alignItems = 'flex-end';
+
+      const chatTopFromBottom =
+        window.innerHeight - chat.getBoundingClientRect().top;
+      const stackHeight = stoneTowerButtons.offsetHeight;
+      stoneTowerButtons.style.bottom = `${Math.max(
+        145,
+        Math.round(chatTopFromBottom - stackHeight)
+      )}px`;
+    }
   }
 
   // 마우스 방향에 따라 카메라 회전
