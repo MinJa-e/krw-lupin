@@ -65,8 +65,8 @@ export function createStoneTower({
 
   function addStone() {
     const index = stones.length;
-    // 돌 시작 크기 0.65 → 층수 ↑할수록 0.06씩 줄어듦, 최소 0.02
-    const size = Math.max(0.02, 0.65 - index * 0.06);
+    // 돌 시작 크기 0.65 → 층수 ↑할수록 0.06씩 줄어듦, 최소 0.03
+    const size = Math.max(0.03, 0.65 - index * 0.06);
     const stone = createStone(stoneMaterial, size);
     const stoneHeight = size * 0.6;
 
