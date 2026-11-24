@@ -2431,8 +2431,8 @@ function animate() {
   dogInteractionButtons.style.display =
     isNearLunchDog ? 'flex' : 'none';
 
-  // 해변 돌탑: 마커 애니메이션 및 근접 시 버튼 표시
-  stoneTower.update(delta, clock.elapsedTime);
+  // 해변 돌탑: 무너짐 애니메이션 및 근접 시 버튼 표시
+  stoneTower.update(delta);
   stoneTowerButtons.style.display =
     stoneTower.isNear(player.position) ? 'flex' : 'none';
 

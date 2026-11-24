@@ -60,23 +60,13 @@ export function createStoneTower({
   pad.position.y = 0.03;
   group.add(pad);
 
-  // 위에서 내려다보아도 보일 수 있는 안내 마커
-  const marker = new THREE.Mesh(
-    new THREE.ConeGeometry(0.32, 0.9, 12),
-    markerMaterial
-  );
-  marker.name = 'stone-tower-marker';
-  marker.rotation.x = Math.PI;
-  marker.position.y = 2.6;
-  group.add(marker);
-
   const stones = [];
   let falling = [];
 
   function addStone() {
     const index = stones.length;
-    // 돌 시작 크기 0.65 → 층수 ↑할수록 0.06씩 줄어듦, 최소 0.01
-    const size = Math.max(0.01, 0.65 - index * 0.06);
+    // 돌 시작 크기 0.65 → 층수 ↑할수록 0.06씩 줄어듦, 최소 0.02
+    const size = Math.max(0.02, 0.65 - index * 0.06);
     const stone = createStone(stoneMaterial, size);
     const stoneHeight = size * 0.6;
 
@@ -133,10 +123,7 @@ export function createStoneTower({
     return Math.hypot(dx, dz) <= INTERACT_RADIUS;
   }
 
-  function update(delta, elapsedTime) {
-    marker.position.y = 2.4 + Math.sin(elapsedTime * 2) * 0.15;
-    marker.rotation.y = elapsedTime * 1.2;
-
+  function update(delta) {
     // 무너지는 돌 물리 애니메이션
     if (falling.length > 0) {
       for (let i = falling.length - 1; i >= 0; i -= 1) {
