@@ -309,12 +309,23 @@ canvas {
   }
 
   #stone-tower-buttons {
-    bottom: 140px;
+    /* 채팅창(왼쪽)과 겹치지 않게 오른쪽 가장자리에 세로 배치 */
+    left: auto;
+    right: 10px;
+    bottom: 118px;
+    transform: none;
+    flex-direction: column;
+    align-items: flex-end;
     gap: 6px;
   }
 
   #stone-tower-buttons button {
-    padding: 11px 14px;
-    font-size: 13px;
+    padding: 9px 12px;
+    font-size: 12px;
+  }
+
+  #stone-tower-counter {
+    padding: 4px 8px;
+    font-size: 11px;
   }
 }
