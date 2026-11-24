@@ -362,6 +362,32 @@ canvas {
   cursor: pointer;
 }
 
+.appearance-hint {
+  font-size: 11px;
+  color: #a8d8ff;
+  margin-bottom: 8px;
+}
+
+.appearance-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.appearance-swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.appearance-swatch:active {
+  transform: scale(0.9);
+}
+
 .appearance-panel-actions {
   display: flex;
   gap: 6px;

@@ -20,10 +20,15 @@ test('캐릭터 색상을 꾸미면 모델에 적용되고 새로고침 후에�
     await expect.poll(getShirt).toBe('#ffffff');
     await expect.poll(getShirtModelColor).toBe('#ffffff');
 
-    // 패널 열고 상의 색상을 빨강으로 변경
+    // 패널 열고 팔레트 스와치(파스텔 핑크)를 상의에 적용
     await page.locator('#appearance-button').click();
     await expect(page.locator('#appearance-panel')).toBeVisible();
 
+    await page.locator('#appearance-swatches .appearance-swatch[data-color="#eba3c7"]').click();
+    await expect.poll(getShirt).toBe('#eba3c7');
+    await expect.poll(getShirtModelColor).toBe('#eba3c7');
+
+    // 색상 입력창으로 직접 변경 (빨강)
     const shirtInput = page.locator('#appearance-shirt');
     await shirtInput.fill('#ff0000');
 

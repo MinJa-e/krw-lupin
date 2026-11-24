@@ -2030,6 +2030,46 @@ function syncAppearanceInputs() {
   }
 }
 
+// 팔레트 스와치가 적용될 부위 (색상 입력창을 마지막으로 누른 부위)
+const appearancePartNames = {
+  skin: '피부',
+  hair: '머리',
+  shirt: '상의',
+  pants: '하의',
+  shoes: '신발'
+};
+const appearanceHint = document.getElementById('appearance-hint');
+let appearanceActivePart = 'shirt';
+
+function setAppearanceActivePart(part) {
+  appearanceActivePart = part;
+  appearanceHint.textContent = `색을 적용할 부위: ${appearancePartNames[part]}`;
+
+  for (const [p, input] of Object.entries(appearanceInputs)) {
+    input.style.outline = p === part ? '2px solid #ffd54f' : '';
+  }
+}
+
+setAppearanceActivePart('shirt');
+
+for (const [part, input] of Object.entries(appearanceInputs)) {
+  input.addEventListener('click', () => setAppearanceActivePart(part));
+  input.addEventListener('focus', () => setAppearanceActivePart(part));
+}
+
+document.querySelectorAll('#appearance-swatches .appearance-swatch').forEach((swatch) => {
+  swatch.addEventListener('click', (event) => {
+    event.preventDefault();
+
+    const color = event.currentTarget.dataset.color;
+    if (!color) return;
+
+    appearance[appearanceActivePart] = color;
+    appearanceInputs[appearanceActivePart].value = color;
+    applyOwnAppearance();
+  });
+});
+
 function applyOwnAppearance() {
   applyAppearanceToModel(activeAvatarController.model, appearance, appearanceMaterialToPart);
   saveAppearance(appearance);
