@@ -312,7 +312,7 @@ canvas {
     /* 채팅창(왼쪽)과 겹치지 않게 오른쪽 가장자리에 세로 배치 */
     left: auto;
     right: 10px;
-    bottom: 118px;
+    bottom: 145px;
     transform: none;
     flex-direction: column;
     align-items: flex-end;
