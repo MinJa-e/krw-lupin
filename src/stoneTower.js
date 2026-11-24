@@ -4,15 +4,15 @@ const STONE_COLOR = 0x9a9186;
 const MARKER_COLOR = 0xffd54f;
 const INTERACT_RADIUS = 3.2;
 const COLLAPSE_CHANCE_PER_LAYER = 0.10;
-const COLLAPSE_CHANCE_CEILING = 0.40;
+const COLLAPSE_CHANCE_CEILING = 0.50;
 
 /**
  * n층(1-based)을 쌀 때 무너질 확률.
- * 1층 0% (100% 안전), 2층부터 10%씩 증가하지만 50%층부터는 40%로 고정.
+ * 1층 0% (100% 안전), 2층부터 10%씩 증가하지만 5층부터는 50%로 고정.
  */
 function collapseChanceForLayer(layer) {
   const raw = COLLAPSE_CHANCE_PER_LAYER * (layer - 1);
-  // 50층 이하이면 위 계산, 그 이상이면 40%로 고정
+  // 5층 이하이면 위 계산, 그 이상이면 50%로 고정
   return Math.min(COLLAPSE_CHANCE_CEILING, raw);
 }
 
@@ -75,8 +75,8 @@ export function createStoneTower({
 
   function addStone() {
     const index = stones.length;
-    // 높이 제한 없이 쌓되, 돌 크기는 점점 줄어들고 최소 크기에서 멈춘다
-    const size = Math.max(0.45, 1.1 - index * 0.08);
+    // 돌 크기를 더 작게 시작 (0.6) → 층수 ↑할수록 점점 줄어듦, 최소 0.35
+    const size = Math.max(0.35, 0.3 - index * 0.03);
     const stone = createStone(stoneMaterial, size);
 
     stone.position.set(
@@ -109,7 +109,7 @@ export function createStoneTower({
           (Math.random() - 0.5) * 7,
           (Math.random() - 0.5) * 7
         ),
-        restY: ((stone.userData.size * 0.6) / 2) + 0.16
+        restY: ((stone.userData.size * 0.5) / 2) + 0.16
       });
     }
 

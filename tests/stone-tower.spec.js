@@ -26,13 +26,14 @@ test('해변 돌탑이 오류 없이 생성되고 상호작용으로 돌이 쌓�
     await expect(towerButton).toBeVisible();
     await expect(towerCounter).toHaveText('0');
 
-    // 층별 무너질 확률 공식 검증: 1층 0%, 2층 10%, 3층 20%, ..., 5층 40%, 6~19층 40% 고정
+    // 층별 무너질 확률 공식 검증: 1층 0%, 2층 10%, 3층 20%, 4층 30%, 5층 40%, 6층 50% 도달, 이후 50% 고정
     await expect.poll(() => getChance(1)).toBe(0);
     await expect.poll(() => getChance(2)).toBeCloseTo(0.10, 5);
     await expect.poll(() => getChance(3)).toBeCloseTo(0.20, 5);
+    await expect.poll(() => getChance(4)).toBeCloseTo(0.30, 5);
     await expect.poll(() => getChance(5)).toBeCloseTo(0.40, 5);
-    await expect.poll(() => getChance(6)).toBe(0.40);
-    await expect.poll(() => getChance(50)).toBe(0.40);
+    await expect.poll(() => getChance(6)).toBe(0.50);
+    await expect.poll(() => getChance(50)).toBe(0.50);
 
     // 원래 Math.random 백업
     await page.evaluate(() => { window.__origRandom = Math.random; });
