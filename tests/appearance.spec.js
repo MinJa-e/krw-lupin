@@ -28,29 +28,25 @@ test('캐릭터 색상을 꾸미면 모델에 적용되고 새로고침 후에�
     await expect.poll(getShirt).toBe('#eba3c7');
     await expect.poll(getShirtModelColor).toBe('#eba3c7');
 
-    // 색상 입력창으로 직접 변경 (빨강)
-    const shirtInput = page.locator('#appearance-shirt');
-    await shirtInput.fill('#ff0000');
-
-    // 상태 + 3D 모델 + localStorage 세 곳 모두 반영
-    await expect.poll(getShirt).toBe('#ff0000');
-    await expect.poll(getShirtModelColor).toBe('#ff0000');
-    await expect.poll(() =>
-      page.evaluate(() => JSON.parse(localStorage.getItem('krw-lupin-appearance')).shirt)
-    ).toBe('#ff0000');
+    // 부위를 하의로 바꾸면 상의 색은 유지되고 하의만 바뀐다
+    await page.locator('#appearance-parts .appearance-part[data-part="pants"]').click();
+    await page.locator('#appearance-swatches .appearance-swatch[data-color="#a3d9eb"]').click();
+    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().pants)).toBe('#a3d9eb');
+    await expect.poll(getShirt).toBe('#eba3c7');
 
     // 초기화 버튼 → 기본값 복원
     await page.locator('#appearance-reset').click();
     await expect.poll(getShirt).toBe('#ffffff');
     await expect.poll(getShirtModelColor).toBe('#ffffff');
 
-    // 다시 빨강으로 바꾸고 새로고침 → localStorage에서 복원
-    await shirtInput.fill('#ff0000');
-    await expect.poll(getShirt).toBe('#ff0000');
+    // 다시 상의를 파스텔 핑크로 바꾸고 새로고침 → localStorage에서 복원
+    await page.locator('#appearance-parts .appearance-part[data-part="shirt"]').click();
+    await page.locator('#appearance-swatches .appearance-swatch[data-color="#eba3c7"]').click();
+    await expect.poll(getShirt).toBe('#eba3c7');
 
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().shirt)).toBe('#ff0000');
-    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAvatarPartColor('shirt'))).toBe('#ff0000');
+    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().shirt)).toBe('#eba3c7');
+    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAvatarPartColor('shirt'))).toBe('#eba3c7');
   }
 
   expect(pageErrors).toEqual([]);

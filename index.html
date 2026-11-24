@@ -55,12 +55,14 @@
 <button id="appearance-button" type="button" aria-label="캐릭터 꾸미기">🎨</button>
 <div id="appearance-panel" style="display: none;">
   <div class="appearance-panel-title">🎨 캐릭터 꾸미기</div>
-  <label>피부 <input type="color" id="appearance-skin" value="#ffd0ad"></label>
-  <label>머리 <input type="color" id="appearance-hair" value="#493126"></label>
-  <label>상의 <input type="color" id="appearance-shirt" value="#ffffff"></label>
-  <label>하의 <input type="color" id="appearance-pants" value="#303d59"></label>
-  <label>신발 <input type="color" id="appearance-shoes" value="#f4f1e9"></label>
-  <div class="appearance-hint" id="appearance-hint">색을 적용할 부위: 상의</div>
+  <div class="appearance-hint" id="appearance-hint">색을 바꿀 부위: 상의</div>
+  <div class="appearance-parts" id="appearance-parts">
+    <button type="button" class="appearance-part" data-part="skin">피부</button>
+    <button type="button" class="appearance-part" data-part="hair">머리</button>
+    <button type="button" class="appearance-part selected" data-part="shirt">상의</button>
+    <button type="button" class="appearance-part" data-part="pants">하의</button>
+    <button type="button" class="appearance-part" data-part="shoes">신발</button>
+  </div>
   <div class="appearance-swatches" id="appearance-swatches">
     <button type="button" class="appearance-swatch" data-color="#ffffff" style="background: #ffffff" aria-label="흰색"></button>
     <button type="button" class="appearance-swatch" data-color="#000000" style="background: #000000" aria-label="검은색"></button>

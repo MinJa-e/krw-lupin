@@ -2016,21 +2016,9 @@ const appearanceButton = document.getElementById('appearance-button');
 const appearancePanel = document.getElementById('appearance-panel');
 const appearanceCloseButton = document.getElementById('appearance-close');
 const appearanceResetButton = document.getElementById('appearance-reset');
-const appearanceInputs = {
-  skin: document.getElementById('appearance-skin'),
-  hair: document.getElementById('appearance-hair'),
-  shirt: document.getElementById('appearance-shirt'),
-  pants: document.getElementById('appearance-pants'),
-  shoes: document.getElementById('appearance-shoes')
-};
+const appearanceHint = document.getElementById('appearance-hint');
 
-function syncAppearanceInputs() {
-  for (const [part, input] of Object.entries(appearanceInputs)) {
-    input.value = appearance[part];
-  }
-}
-
-// 팔레트 스와치가 적용될 부위 (색상 입력창을 마지막으로 누른 부위)
+// 부위 선택 버튼 (네이티브 컬러 픽커 대신 8색 팔레트만 사용)
 const appearancePartNames = {
   skin: '피부',
   hair: '머리',
@@ -2038,24 +2026,46 @@ const appearancePartNames = {
   pants: '하의',
   shoes: '신발'
 };
-const appearanceHint = document.getElementById('appearance-hint');
+const appearancePartButtons = {};
 let appearanceActivePart = 'shirt';
+
+document.querySelectorAll('#appearance-parts .appearance-part').forEach((button) => {
+  const part = button.dataset.part;
+  appearancePartButtons[part] = button;
+
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    setAppearanceActivePart(part);
+    event.currentTarget.blur();
+  });
+});
 
 function setAppearanceActivePart(part) {
   appearanceActivePart = part;
-  appearanceHint.textContent = `색을 적용할 부위: ${appearancePartNames[part]}`;
+  appearanceHint.textContent = `색을 바꿀 부위: ${appearancePartNames[part]}`;
 
-  for (const [p, input] of Object.entries(appearanceInputs)) {
-    input.style.outline = p === part ? '2px solid #ffd54f' : '';
+  for (const [p, button] of Object.entries(appearancePartButtons)) {
+    button.classList.toggle('selected', p === part);
+    // 현재 색상을 버튼 배경으로 표시
+    button.style.background = appearance[p];
+    button.classList.toggle('on-light', isLightColor(appearance[p]));
   }
 }
 
-setAppearanceActivePart('shirt');
+function isLightColor(hex) {
+  const value = hex.replace('#', '');
+  const r = parseInt(value.slice(0, 2), 16);
+  const g = parseInt(value.slice(2, 4), 16);
+  const b = parseInt(value.slice(4, 6), 16);
 
-for (const [part, input] of Object.entries(appearanceInputs)) {
-  input.addEventListener('click', () => setAppearanceActivePart(part));
-  input.addEventListener('focus', () => setAppearanceActivePart(part));
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.7;
 }
+
+function syncAppearancePartButtons() {
+  setAppearanceActivePart(appearanceActivePart);
+}
+
+setAppearanceActivePart('shirt');
 
 document.querySelectorAll('#appearance-swatches .appearance-swatch').forEach((swatch) => {
   swatch.addEventListener('click', (event) => {
@@ -2065,7 +2075,7 @@ document.querySelectorAll('#appearance-swatches .appearance-swatch').forEach((sw
     if (!color) return;
 
     appearance[appearanceActivePart] = color;
-    appearanceInputs[appearanceActivePart].value = color;
+    setAppearanceActivePart(appearanceActivePart);
     applyOwnAppearance();
   });
 });
@@ -2078,8 +2088,6 @@ function applyOwnAppearance() {
     socket.emit('setAppearance', appearance);
   }
 }
-
-syncAppearanceInputs();
 
 appearanceButton.addEventListener('click', (event) => {
   event.preventDefault();
@@ -2094,19 +2102,10 @@ appearanceCloseButton.addEventListener('click', (event) => {
   event.currentTarget.blur();
 });
 
-for (const [part, input] of Object.entries(appearanceInputs)) {
-  input.addEventListener('input', () => {
-    if (!/^#[0-9a-fA-F]{6}$/.test(input.value)) return;
-
-    appearance[part] = input.value;
-    applyOwnAppearance();
-  });
-}
-
 appearanceResetButton.addEventListener('click', (event) => {
   event.preventDefault();
   Object.assign(appearance, DEFAULT_APPEARANCE);
-  syncAppearanceInputs();
+  setAppearanceActivePart(appearanceActivePart);
   applyOwnAppearance();
   event.currentTarget.blur();
 });

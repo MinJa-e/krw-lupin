@@ -345,21 +345,30 @@ canvas {
   margin-bottom: 10px;
 }
 
-#appearance-panel label {
+.appearance-parts {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
-#appearance-panel input[type="color"] {
-  width: 44px;
-  height: 28px;
-  padding: 0;
+.appearance-part {
+  flex: 1;
+  padding: 8px 4px;
   border: none;
-  border-radius: 6px;
-  background: none;
+  border-radius: 8px;
+
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  font-size: 12px;
+
   cursor: pointer;
+}
+
+.appearance-part.selected {
+  background: #ffd54f;
+  color: #333;
+  font-weight: bold;
 }
 
 .appearance-hint {
