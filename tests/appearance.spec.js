@@ -24,15 +24,15 @@ test('캐릭터 색상을 꾸미면 모델에 적용되고 새로고침 후에�
     await page.locator('#appearance-button').click();
     await expect(page.locator('#appearance-panel')).toBeVisible();
 
-    await page.locator('#appearance-swatches .appearance-swatch[data-color="#eba3c7"]').click();
-    await expect.poll(getShirt).toBe('#eba3c7');
-    await expect.poll(getShirtModelColor).toBe('#eba3c7');
+    await page.locator('#appearance-swatches .appearance-swatch[data-color="#e0ac69"]').click();
+    await expect.poll(getShirt).toBe('#e0ac69');
+    await expect.poll(getShirtModelColor).toBe('#e0ac69');
 
     // 부위를 하의로 바꾸면 상의 색은 유지되고 하의만 바뀐다
     await page.locator('#appearance-parts .appearance-part[data-part="pants"]').click();
-    await page.locator('#appearance-swatches .appearance-swatch[data-color="#a3d9eb"]').click();
-    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().pants)).toBe('#a3d9eb');
-    await expect.poll(getShirt).toBe('#eba3c7');
+    await page.locator('#appearance-swatches .appearance-swatch[data-color="#8d5524"]').click();
+    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().pants)).toBe('#8d5524');
+    await expect.poll(getShirt).toBe('#e0ac69');
 
     // 직접 선택 피커: 상의를 활성 부위로 선택 후 임의 색상(#00ff88) 적용
     await page.locator('#appearance-parts .appearance-part[data-part="shirt"]').click();
@@ -42,21 +42,21 @@ test('캐릭터 색상을 꾸미면 모델에 적용되고 새로고침 후에�
     await expect.poll(getShirt).toBe('#00ff88');
     await expect.poll(getShirtModelColor).toBe('#00ff88');
     // 하의는 그대로 유지 (부위 격리 확인)
-    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().pants)).toBe('#a3d9eb');
+    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().pants)).toBe('#8d5524');
 
     // 초기화 버튼 → 기본값 복원
     await page.locator('#appearance-reset').click();
     await expect.poll(getShirt).toBe('#ffffff');
     await expect.poll(getShirtModelColor).toBe('#ffffff');
 
-    // 다시 상의를 파스텔 핑크로 바꾸고 새로고침 → localStorage에서 복원
+    // 다시 상의를 황인 피부색으로 바꾸고 새로고침 → localStorage에서 복원
     await page.locator('#appearance-parts .appearance-part[data-part="shirt"]').click();
-    await page.locator('#appearance-swatches .appearance-swatch[data-color="#eba3c7"]').click();
-    await expect.poll(getShirt).toBe('#eba3c7');
+    await page.locator('#appearance-swatches .appearance-swatch[data-color="#e0ac69"]').click();
+    await expect.poll(getShirt).toBe('#e0ac69');
 
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().shirt)).toBe('#eba3c7');
-    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAvatarPartColor('shirt'))).toBe('#eba3c7');
+    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().shirt)).toBe('#e0ac69');
+    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAvatarPartColor('shirt'))).toBe('#e0ac69');
   }
 
   expect(pageErrors).toEqual([]);
