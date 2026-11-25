@@ -44,10 +44,11 @@ test('캐릭터 색상을 꾸미면 모델에 적용되고 새로고침 후에�
     // 하의는 그대로 유지 (부위 격리 확인)
     await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().pants)).toBe('#b15d25');
 
-    // 초기화 버튼 → 기본값 복원
+    // 초기화 버튼 → 선택한 부위(상의)만 기본값 복원, 하의는 유지
     await page.locator('#appearance-reset').click();
     await expect.poll(getShirt).toBe('#ffffff');
     await expect.poll(getShirtModelColor).toBe('#ffffff');
+    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().pants)).toBe('#b15d25');
 
     // 다시 상의를 황인 피부색으로 바꾸고 새로고침 → localStorage에서 복원
     await page.locator('#appearance-parts .appearance-part[data-part="shirt"]').click();

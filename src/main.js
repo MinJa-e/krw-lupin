@@ -2118,7 +2118,8 @@ appearanceCloseButton.addEventListener('click', (event) => {
 
 appearanceResetButton.addEventListener('click', (event) => {
   event.preventDefault();
-  Object.assign(appearance, DEFAULT_APPEARANCE);
+  // 전체 초기화가 아니라 선택한 부위의 색상만 기본값으로 복원
+  appearance[appearanceActivePart] = DEFAULT_APPEARANCE[appearanceActivePart];
   setAppearanceActivePart(appearanceActivePart);
   applyOwnAppearance();
   event.currentTarget.blur();
