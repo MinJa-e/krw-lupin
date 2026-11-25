@@ -2017,6 +2017,7 @@ const appearancePanel = document.getElementById('appearance-panel');
 const appearanceCloseButton = document.getElementById('appearance-close');
 const appearanceResetButton = document.getElementById('appearance-reset');
 const appearanceHint = document.getElementById('appearance-hint');
+const appearanceCustomInput = document.getElementById('appearance-custom');
 
 // 부위 선택 버튼 (네이티브 컬러 픽커 대신 8색 팔레트만 사용)
 const appearancePartNames = {
@@ -2044,6 +2045,9 @@ function setAppearanceActivePart(part) {
   appearanceActivePart = part;
   appearanceHint.textContent = `색을 바꿀 부위: ${appearancePartNames[part]}`;
 
+  // 직접 선택 피커를 현재 부위 색으로 동기화
+  appearanceCustomInput.value = appearance[part];
+
   for (const [p, button] of Object.entries(appearancePartButtons)) {
     button.classList.toggle('selected', p === part);
     // 현재 색상을 버튼 배경으로 표시
@@ -2066,6 +2070,16 @@ function syncAppearancePartButtons() {
 }
 
 setAppearanceActivePart('shirt');
+
+// 직접 선택 피커: 활성 부위에 임의 색상 적용
+appearanceCustomInput.addEventListener('input', () => {
+  const color = appearanceCustomInput.value;
+  if (!/^#[0-9a-fA-F]{6}$/.test(color)) return;
+
+  appearance[appearanceActivePart] = color;
+  setAppearanceActivePart(appearanceActivePart);
+  applyOwnAppearance();
+});
 
 document.querySelectorAll('#appearance-swatches .appearance-swatch').forEach((swatch) => {
   swatch.addEventListener('click', (event) => {

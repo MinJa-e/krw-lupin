@@ -34,6 +34,16 @@ test('캐릭터 색상을 꾸미면 모델에 적용되고 새로고침 후에�
     await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().pants)).toBe('#a3d9eb');
     await expect.poll(getShirt).toBe('#eba3c7');
 
+    // 직접 선택 피커: 상의를 활성 부위로 선택 후 임의 색상(#00ff88) 적용
+    await page.locator('#appearance-parts .appearance-part[data-part="shirt"]').click();
+    const customInput = page.locator('#appearance-custom');
+    await customInput.fill('#00ff88');
+    await customInput.dispatchEvent('input');
+    await expect.poll(getShirt).toBe('#00ff88');
+    await expect.poll(getShirtModelColor).toBe('#00ff88');
+    // 하의는 그대로 유지 (부위 격리 확인)
+    await expect.poll(() => page.evaluate(() => window.__krwLupinE2E.getAppearance().pants)).toBe('#a3d9eb');
+
     // 초기화 버튼 → 기본값 복원
     await page.locator('#appearance-reset').click();
     await expect.poll(getShirt).toBe('#ffffff');
