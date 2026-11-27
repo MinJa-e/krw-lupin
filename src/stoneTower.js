@@ -1,14 +1,16 @@
 import * as THREE from 'three';
 
-const STONE_COLOR = 0x9a9186;
-const MARKER_COLOR = 0xffd54f;
+const STONE_SHADES = [0x9a9186, 0x837c73, 0xa89f92];
+const PAD_STONE_COLOR = 0xb9b0a1;
+const PAD_RIM_COLOR = 0x746d63;
+const MARKER_COLOR = 0xe9be56;
 const INTERACT_RADIUS = 3.2;
 const COLLAPSE_CHANCE_PER_LAYER = 0.10;
 const COLLAPSE_CHANCE_CEILING = 0.50;
 
 /**
- * n층(1-based)을 쌀 때 무너질 확률.
- * 1층 0% (100% 안전), 2층부터 10%씩 증가하지만 5층부터는 50%로 고정.
+ * n층(1-based)을 쌓을 때 무너질 확률.
+ * 1층 0% (100% 안전), 2층부터 10%씩 증가하지만 6층부터는 50%로 고정.
  */
 function collapseChanceForLayer(layer) {
   const raw = COLLAPSE_CHANCE_PER_LAYER * (layer - 1);
@@ -18,12 +20,14 @@ function collapseChanceForLayer(layer) {
 
 const GRAVITY = 9.8;
 
-function createStone(material, size) {
+function createStone(materials, index, size) {
+  const material = materials[index % materials.length];
   const stone = new THREE.Mesh(
-    new THREE.BoxGeometry(size, size * 0.6, size),
+    new THREE.DodecahedronGeometry(size * 0.56, 0),
     material
   );
 
+  stone.scale.set(1.06, 0.54, 0.92);
   stone.castShadow = true;
   stone.receiveShadow = true;
   stone.rotation.y = Math.random() * Math.PI * 2;
@@ -36,7 +40,7 @@ function createStone(material, size) {
 /**
  * 해변 돌탑 쌓기 콘텐츠.
  * - 돌은 제한 없이 쌓인다 (높이 제한 없음)
- * - 쌓을 때 층별로 무너질 확률이 달라진다 (1층 0%, 2층부터 10%씩 증가, 50층부터는 40% 고정)
+ * - 쌓을 때 층별로 무너질 확률이 달라진다 (1층 0%, 2층부터 10%씩 증가, 6층부터는 50% 고정)
  * - 무너지면 돌들이 물리적으로 튕기며 떨어지는 애니메이션 후 제거된다
  */
 export function createStoneTower({
@@ -44,21 +48,41 @@ export function createStoneTower({
 } = {}) {
   const group = new THREE.Group();
   group.name = 'stone-tower';
-  group.position.set(position.x, 0.15, position.z);
+  group.position.set(position.x, 0.02, position.z);
 
-  const stoneMaterial = new THREE.MeshStandardMaterial({
-    color: STONE_COLOR,
-    roughness: 0.95
-  });
+  const stoneMaterials = STONE_SHADES.map((color) => new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.93
+  }));
+  const padMaterial = new THREE.MeshStandardMaterial({ color: PAD_STONE_COLOR, roughness: 0.95 });
+  const rimMaterial = new THREE.MeshStandardMaterial({ color: PAD_RIM_COLOR, roughness: 0.95 });
   const markerMaterial = new THREE.MeshBasicMaterial({ color: MARKER_COLOR });
 
-  // 쌓기 자리를 알리는 원형 패드
+  // 돌탑 쌓기 자리를 알리는 자연석 받침대와 테두리 링
   const pad = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.15, 1.15, 0.06, 24),
-    markerMaterial
+    new THREE.CylinderGeometry(1.12, 1.18, 0.06, 24),
+    padMaterial
   );
   pad.position.y = 0.03;
+  pad.receiveShadow = true;
   group.add(pad);
+
+  const rim = new THREE.Mesh(
+    new THREE.TorusGeometry(1.13, 0.055, 6, 24),
+    rimMaterial
+  );
+  rim.rotation.x = Math.PI / 2;
+  rim.position.y = 0.05;
+  rim.receiveShadow = true;
+  group.add(rim);
+
+  const innerRing = new THREE.Mesh(
+    new THREE.RingGeometry(0.76, 0.88, 24),
+    markerMaterial
+  );
+  innerRing.rotation.x = -Math.PI / 2;
+  innerRing.position.y = 0.062;
+  group.add(innerRing);
 
   const stones = [];
   let falling = [];
@@ -67,11 +91,11 @@ export function createStoneTower({
     const index = stones.length;
     // 돌 시작 크기 0.65 → 층수 ↑할수록 0.06씩 줄어듦, 최소 0.03
     const size = Math.max(0.03, 0.65 - index * 0.06);
-    const stone = createStone(stoneMaterial, size);
+    const stone = createStone(stoneMaterials, index, size);
     const stoneHeight = size * 0.6;
 
     // 아래 쌓인 돌들의 실제 높이 합 위에 얹는다 (살짝 겹치게 해서 틈 없이)
-    let baseY = 0.12;
+    let baseY = 0.08;
     for (const s of stones) {
       baseY += s.userData.size * 0.6 * 0.92;
     }
@@ -106,7 +130,7 @@ export function createStoneTower({
           (Math.random() - 0.5) * 7,
           (Math.random() - 0.5) * 7
         ),
-        restY: ((stone.userData.size * 0.5) / 2) + 0.16
+        restY: ((stone.userData.size * 0.5) / 2) + 0.04
       });
     }
 

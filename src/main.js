@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { io } from 'socket.io-client';
 import { createStoneTower } from './stoneTower.js';
 import { populateJapaneseTown } from './townProps.js';
+import { populateBeachAndOcean } from './beachProps.js';
 import {
   DEFAULT_APPEARANCE,
   loadAppearance,
@@ -196,14 +197,18 @@ const sun = new THREE.DirectionalLight(0xfff4dd, 2.4);
 sun.position.set(-20, 32, 10);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.left = -48;
-sun.shadow.camera.right = 48;
-sun.shadow.camera.top = 48;
-sun.shadow.camera.bottom = -48;
+// 그림자 카메라는 플레이어 주변만 좁게 비춘다 (animate()에서 위치 추적).
+// 넓은 절두체로 맵 전체를 커버하면 그림자 패스가 오브제 수백 개를 매 프레임 그려 렉이 걸린다.
+sun.shadow.camera.left = -16;
+sun.shadow.camera.right = 16;
+sun.shadow.camera.top = 16;
+sun.shadow.camera.bottom = -16;
 sun.shadow.camera.near = 0.5;
-sun.shadow.camera.far = 100;
+sun.shadow.camera.far = 90;
 sun.shadow.bias = -0.00025;
+sun.shadow.camera.updateProjectionMatrix();
 scene.add(sun);
+scene.add(sun.target);
 
 // 외부 이미지 없이도 표면의 결이 살아나도록 작은 타일 텍스처를 만든다.
 function createCanvasTexture(draw, repeatX = 1, repeatY = 1) {
@@ -333,21 +338,23 @@ const cobbleTexture = createCanvasTexture((context, size) => {
 
 const waterTexture = createCanvasTexture((context, size) => {
   const waterGradient = context.createLinearGradient(0, 0, size, size);
-  waterGradient.addColorStop(0, '#2d899f');
-  waterGradient.addColorStop(0.5, '#4aa8b4');
-  waterGradient.addColorStop(1, '#277b94');
+  waterGradient.addColorStop(0, '#21758e');
+  waterGradient.addColorStop(0.5, '#3b9bad');
+  waterGradient.addColorStop(1, '#1e6e89');
   context.fillStyle = waterGradient;
   context.fillRect(0, 0, size, size);
 
-  for (let i = 0; i < 150; i += 1) {
+  for (let i = 0; i < 180; i += 1) {
     const x = Math.random() * size;
     const y = Math.random() * size;
-    const length = 12 + Math.random() * 70;
-    context.strokeStyle = 'rgba(210, 242, 232, ' + (Math.random() * 0.22) + ')';
-    context.lineWidth = 1 + Math.random() * 2;
+    const length = 16 + Math.random() * 76;
+    context.strokeStyle = i % 3 === 0
+      ? 'rgba(225, 249, 245, ' + (Math.random() * 0.28) + ')'
+      : 'rgba(17, 68, 88, ' + (Math.random() * 0.14) + ')';
+    context.lineWidth = 1 + Math.random() * 2.2;
     context.beginPath();
     context.moveTo(x, y);
-    context.bezierCurveTo(x + length * 0.3, y - 3, x + length * 0.7, y + 3, x + length, y);
+    context.bezierCurveTo(x + length * 0.3, y - 4, x + length * 0.7, y + 4, x + length, y);
     context.stroke();
   }
 }, 8, 18);
@@ -841,19 +848,36 @@ populateJapaneseTown(scene, {
 // 해변 파라솔
 function createBeachUmbrella(x, z, canopyColor) {
   const umbrella = new THREE.Group();
+  const woodPoleMat = new THREE.MeshStandardMaterial({ map: woodTexture, color: 0x76553a, roughness: 1 });
   const pole = new THREE.Mesh(
     new THREE.CylinderGeometry(0.045, 0.055, 1.75, 16),
-    new THREE.MeshStandardMaterial({ color: 0x76553a, roughness: 1 })
+    woodPoleMat
   );
   pole.position.y = 0.9;
   umbrella.add(pole);
 
+  const stripeTex = createCanvasTexture((ctx, size) => {
+    ctx.fillStyle = '#' + canopyColor.toString(16).padStart(6, '0');
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = 'rgba(255, 250, 240, 0.72)';
+    const stripes = 8;
+    for (let i = 0; i < stripes; i += 2) {
+      ctx.fillRect((i * size) / stripes, 0, size / stripes, size);
+    }
+  });
   const canopy = new THREE.Mesh(
-    new THREE.ConeGeometry(1.45, 0.48, 32),
-    new THREE.MeshStandardMaterial({ color: canopyColor, roughness: 0.9 })
+    new THREE.ConeGeometry(1.45, 0.48, 24),
+    new THREE.MeshStandardMaterial({ map: stripeTex, color: 0xffffff, roughness: 0.88 })
   );
   canopy.position.y = 1.88;
   umbrella.add(canopy);
+
+  const finial = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 10, 8),
+    woodPoleMat
+  );
+  finial.position.y = 2.13;
+  umbrella.add(finial);
 
   umbrella.position.set(x, 0, z);
   umbrella.traverse((object) => {
@@ -902,6 +926,27 @@ const boatCabin = new THREE.Mesh(
 boatCabin.position.set(-0.65, 0.9, 0);
 fishingBoat.add(boatCabin);
 
+const boatRoof = new THREE.Mesh(
+  new THREE.BoxGeometry(1.42, 0.08, 1.18),
+  new THREE.MeshStandardMaterial({ color: 0x3f6b7d, roughness: 0.85 })
+);
+boatRoof.position.set(-0.65, 1.34, 0);
+fishingBoat.add(boatRoof);
+
+const boatMast = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.035, 0.045, 1.5, 8),
+  boatWood
+);
+boatMast.position.set(1.1, 1.3, 0);
+fishingBoat.add(boatMast);
+
+const boatFlag = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.45, 0.25),
+  new THREE.MeshStandardMaterial({ color: 0xd9483b, side: THREE.DoubleSide })
+);
+boatFlag.position.set(1.32, 1.9, 0);
+fishingBoat.add(boatFlag);
+
 fishingBoat.position.set(10, 0, -40);
 fishingBoat.rotation.y = -0.12;
 fishingBoat.traverse((object) => {
@@ -911,6 +956,14 @@ fishingBoat.traverse((object) => {
   }
 });
 scene.add(fishingBoat);
+
+// 해변/바다 현실적 오브제 및 동적 바다 요소 배치
+const beachProps = populateBeachAndOcean(scene, {
+  renderer,
+  createCanvasTexture,
+  cobbleTexture,
+  woodTexture
+});
 
 
 // 플레이어 위치/방향을 담당하는 루트와 외형 모델을 분리합니다.
@@ -1200,9 +1253,34 @@ lunchDog.traverse((obj) => {
 // 장면에 추가
 scene.add(lunchDog);
 
-// 해변 돌탑 쌓기 콘텐츠
-const stoneTower = createStoneTower();
-scene.add(stoneTower.group);
+// 해변 돌탑 쌓기 콘텐츠 (해변 여러 위치에 배치)
+const STONE_TOWER_SPOTS = [
+  { x: -10, z: -23 },   // 서쪽 해변 (기본 돌탑)
+  { x: 11, z: -23 },    // 동쪽 해변
+  { x: -27, z: -20.5 }, // 목재 부두 옆 모래사장
+  { x: 26, z: -20.5 }   // 동쪽 바위 해변
+];
+const stoneTowers = STONE_TOWER_SPOTS.map((position) => {
+  const tower = createStoneTower({ position });
+  scene.add(tower.group);
+  return tower;
+});
+
+function getNearStoneTower(pos = player.position) {
+  let nearest = null;
+  let bestDistSq = Infinity;
+  for (const tower of stoneTowers) {
+    if (!tower.isNear(pos)) continue;
+    const dx = pos.x - tower.group.position.x;
+    const dz = pos.z - tower.group.position.z;
+    const distSq = dx * dx + dz * dz;
+    if (distSq < bestDistSq) {
+      bestDistSq = distSq;
+      nearest = tower;
+    }
+  }
+  return nearest;
+}
 
 
 // 아바타는 외형 판별기와 포즈 애니메이터를 조합합니다.
@@ -1481,8 +1559,36 @@ if (import.meta.env.MODE === 'e2e') {
       player.position.set(x, 0, z);
       isMovingToTarget = false;
     },
-    getStoneTowerState: () => stoneTower.getState(),
-    getStoneTowerCollapseChance: (layer) => stoneTower.getCollapseChance(layer),
+    getStoneTowerState: () => (getNearStoneTower() || stoneTowers[0]).getState(),
+    getStoneTowerCollapseChance: (layer) => stoneTowers[0].getCollapseChance(layer),
+    getStoneTowerLocations: () => stoneTowers.map((tower) => ({
+      x: tower.group.position.x,
+      z: tower.group.position.z,
+      height: tower.getState().height
+    })),
+    getRenderStats: () => ({
+      calls: renderer.info.render.calls,
+      triangles: renderer.info.render.triangles,
+      geometries: renderer.info.memory.geometries,
+      textures: renderer.info.memory.textures,
+      fps: renderer.info.render.frame
+    }),
+    getSceneStats: () => {
+      let meshes = 0;
+      let shadowCasters = 0;
+      const byRoot = {};
+      scene.traverse((obj) => {
+        if (!obj.isMesh) return;
+        meshes += 1;
+        if (obj.castShadow) shadowCasters += 1;
+      });
+      for (const root of scene.children) {
+        let count = 0;
+        root.traverse((obj) => { if (obj.isMesh) count += 1; });
+        byRoot[root.name || root.type || 'unnamed'] = count;
+      }
+      return { meshes, shadowCasters, byRoot };
+    },
     getAppearance: () => ({ ...appearance }),
     getAvatarPartColor: (part) => {
       let hex = null;
@@ -1838,44 +1944,56 @@ const isCoarsePointer = window.matchMedia('(pointer: coarse)');
 const stoneTowerButton = document.getElementById('stone-tower-button');
 const stoneTowerCounter = document.getElementById('stone-tower-counter');
 
-function refreshStoneTowerCounter() {
-  stoneTowerCounter.textContent = `${stoneTower.getState().height}`;
+let lastNearStoneTower = null;
+
+function refreshStoneTowerCounter(tower = getNearStoneTower()) {
+  stoneTowerCounter.textContent = `${tower ? tower.getState().height : 0}`;
 }
 
 let stoneTowerFlashTimer = null;
 
-function flashStoneTowerCounter(text) {
+function flashStoneTowerCounter(text, targetTower = null) {
   stoneTowerCounter.textContent = text;
 
   if (stoneTowerFlashTimer) clearTimeout(stoneTowerFlashTimer);
 
   stoneTowerFlashTimer = setTimeout(() => {
-    refreshStoneTowerCounter();
+    stoneTowerFlashTimer = null;
+    const currentTower = getNearStoneTower();
+    if (!targetTower || currentTower === targetTower) {
+      refreshStoneTowerCounter(currentTower);
+    }
   }, 900);
 }
 
 function buildStoneTowerStone() {
-  if (!stoneTower.isNear(player.position)) return;
+  const tower = getNearStoneTower();
+  if (!tower) return;
 
-  stoneTower.addStone();
+  tower.addStone();
 
   // 방금 쌓은 층(1-based)에 따른 무너질 확률로 판정
-  const layer = stoneTower.getState().height;
-  const chance = stoneTower.getCollapseChance(layer);
+  const layer = tower.getState().height;
+  const chance = tower.getCollapseChance(layer);
 
-  refreshStoneTowerCounter();
+  if (stoneTowerFlashTimer) {
+    clearTimeout(stoneTowerFlashTimer);
+    stoneTowerFlashTimer = null;
+  }
+  refreshStoneTowerCounter(tower);
 
   if (Math.random() < chance) {
-    stoneTower.collapse();
-    flashStoneTowerCounter('💥');
+    tower.collapse();
+    flashStoneTowerCounter('💥', tower);
   }
 }
 
 function collapseStoneTower() {
-  if (!stoneTower.isNear(player.position)) return;
+  const tower = getNearStoneTower();
+  if (!tower) return;
 
-  stoneTower.collapse();
-  flashStoneTowerCounter('💥');
+  tower.collapse();
+  flashStoneTowerCounter('💥', tower);
 }
 
 stoneTowerButton.addEventListener('click', (event) => {
@@ -2027,7 +2145,7 @@ window.addEventListener('keydown', (e) => {
     e.key.toLowerCase() === 'e' &&
     !e.repeat &&
     !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(document.activeElement.tagName) &&
-    stoneTower.isNear(player.position)
+    getNearStoneTower()
   ) {
     e.preventDefault();
     buildStoneTowerStone();
@@ -2039,7 +2157,7 @@ window.addEventListener('keydown', (e) => {
     e.key.toLowerCase() === 'r' &&
     !e.repeat &&
     !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(document.activeElement.tagName) &&
-    stoneTower.isNear(player.position)
+    getNearStoneTower()
   ) {
     e.preventDefault();
     collapseStoneTower();
@@ -2350,7 +2468,16 @@ function animate() {
   requestAnimationFrame(animate);
 
   const delta = Math.min(clock.getDelta(), 0.05);
-  waterTexture.offset.x = (waterTexture.offset.x + delta * 0.012) % 1;
+  waterTexture.offset.x = (waterTexture.offset.x + delta * 0.014) % 1;
+  waterTexture.offset.y = (waterTexture.offset.y + delta * 0.004) % 1;
+  beachProps.update(clock.elapsedTime);
+  // 태양(그림자 카메라)을 플레이어에 고정 추적 — 가까운 오브제만 그림자 패스에 그려진다.
+  sun.position.set(player.position.x - 20, 32, player.position.z + 10);
+  sun.target.position.set(player.position.x, 0, player.position.z);
+  sun.target.updateMatrixWorld();
+  fishingBoat.position.y = Math.sin(clock.elapsedTime * 1.1) * 0.045;
+  fishingBoat.rotation.z = Math.sin(clock.elapsedTime * 0.9) * 0.03;
+  fishingBoat.rotation.x = Math.cos(clock.elapsedTime * 0.8) * 0.015;
 
   // 점프 물리
   verticalVelocity -= gravity * delta;
@@ -2492,9 +2619,22 @@ function animate() {
   dogInteractionButtons.style.display =
     isNearLunchDog ? 'flex' : 'none';
 
-  // 해변 돌탑: 무너짐 애니메이션 및 근접 시 버튼 표시
-  stoneTower.update(delta);
-  const nearStoneTowerNow = stoneTower.isNear(player.position);
+  // 해변 돌탑: 모든 위치의 무너짐 애니메이션 및 근접 시 버튼 표시
+  for (const tower of stoneTowers) {
+    tower.update(delta);
+  }
+  const nearTowerNow = getNearStoneTower();
+  if (nearTowerNow !== lastNearStoneTower) {
+    lastNearStoneTower = nearTowerNow;
+    if (stoneTowerFlashTimer) {
+      clearTimeout(stoneTowerFlashTimer);
+      stoneTowerFlashTimer = null;
+    }
+    if (nearTowerNow) {
+      refreshStoneTowerCounter(nearTowerNow);
+    }
+  }
+  const nearStoneTowerNow = Boolean(nearTowerNow);
   stoneTowerButtons.style.display =
     nearStoneTowerNow ? 'flex' : 'none';
 
