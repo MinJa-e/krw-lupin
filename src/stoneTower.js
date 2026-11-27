@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 
 const STONE_SHADES = [0x9a9186, 0x837c73, 0xa89f92];
-const PAD_STONE_COLOR = 0xb9b0a1;
-const PAD_RIM_COLOR = 0x746d63;
-const MARKER_COLOR = 0xe9be56;
+// 받침대·표시는 모래(#e6d5a8~#d4bf8d)와 비슷한 톤으로 은은하게 — 구역임을 살짝만 알린다.
+const PAD_STONE_COLOR = 0xcbb684;  // 다짐된 모래 톤 (모래보다 한 톤 진함)
+const PAD_RIM_COLOR = 0x9a8358;    // 어두운 모래 테두리
+const MARKER_COLOR = 0xb3975f;     // 안쪽 표시 링 (반투명)
 const INTERACT_RADIUS = 3.2;
 const COLLAPSE_CHANCE_PER_LAYER = 0.10;
 const COLLAPSE_CHANCE_CEILING = 0.50;
@@ -56,7 +57,11 @@ export function createStoneTower({
   }));
   const padMaterial = new THREE.MeshStandardMaterial({ color: PAD_STONE_COLOR, roughness: 0.95 });
   const rimMaterial = new THREE.MeshStandardMaterial({ color: PAD_RIM_COLOR, roughness: 0.95 });
-  const markerMaterial = new THREE.MeshBasicMaterial({ color: MARKER_COLOR });
+  const markerMaterial = new THREE.MeshBasicMaterial({
+    color: MARKER_COLOR,
+    transparent: true,
+    opacity: 0.45
+  });
 
   // 돌탑 쌓기 자리를 알리는 자연석 받침대와 테두리 링
   const pad = new THREE.Mesh(
