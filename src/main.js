@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { io } from 'socket.io-client';
 import { createStoneTower } from './stoneTower.js';
+import { populateJapaneseTown } from './townProps.js';
 import {
   DEFAULT_APPEARANCE,
   loadAppearance,
@@ -828,83 +829,14 @@ function createVillageLantern(x, z) {
   [-4.1, 50], [4.1, 50]
 ].forEach(([x, z]) => createVillageLantern(x, z));
 
-// 마을 풍성함을 위한 벤치, 자판기, 가로수 추가
-function createVillageBench(x, z, rotationY = 0) {
-  const bench = new THREE.Group();
-  const woodMat = new THREE.MeshStandardMaterial({ color: 0x8a5a36, roughness: 0.9 });
-  const ironMat = new THREE.MeshStandardMaterial({ color: 0x2b2b2b, roughness: 0.7 });
-
-  const seat = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 0.6), woodMat);
-  seat.position.y = 0.45;
-  bench.add(seat);
-
-  const back = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.5, 0.08), woodMat);
-  back.position.set(0, 0.75, -0.26);
-  bench.add(back);
-
-  [-0.7, 0.7].forEach((bx) => {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.45, 0.5), ironMat);
-    leg.position.set(bx, 0.225, 0);
-    bench.add(leg);
-  });
-
-  bench.position.set(x, 0, z);
-  bench.rotation.y = rotationY;
-  bench.traverse((obj) => { if (obj.isMesh) obj.castShadow = true; });
-  scene.add(bench);
-}
-
-function createVillageVendingMachine(x, z, rotationY = 0) {
-  const vm = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd93838, roughness: 0.5 });
-  const glassMat = new THREE.MeshStandardMaterial({ color: 0x223344, roughness: 0.2, metalness: 0.8 });
-
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.8, 0.7), bodyMat);
-  body.position.y = 0.9;
-  vm.add(body);
-
-  const windowPanel = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.1, 0.05), glassMat);
-  windowPanel.position.set(0, 1.05, 0.36);
-  vm.add(windowPanel);
-
-  vm.position.set(x, 0, z);
-  vm.rotation.y = rotationY;
-  vm.traverse((obj) => { if (obj.isMesh) obj.castShadow = true; });
-  scene.add(vm);
-}
-
-function createVillageTree(x, z) {
-  const tree = new THREE.Group();
-  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 1 });
-  const leavesMat = new THREE.MeshStandardMaterial({ color: 0x3d7a49, roughness: 0.9 });
-
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 2.2, 8), trunkMat);
-  trunk.position.y = 1.1;
-  tree.add(trunk);
-
-  const leaves = new THREE.Mesh(new THREE.SphereGeometry(1.3, 12, 12), leavesMat);
-  leaves.position.y = 2.6;
-  tree.add(leaves);
-
-  tree.position.set(x, 0, z);
-  tree.traverse((obj) => { if (obj.isMesh) obj.castShadow = true; });
-  scene.add(tree);
-}
-
-// 배치 실행
-createVillageBench(-3.2, 3, Math.PI / 2);
-createVillageBench(3.2, 3, -Math.PI / 2);
-createVillageBench(-3.2, -8, Math.PI / 2);
-createVillageBench(3.2, -8, -Math.PI / 2);
-
-createVillageVendingMachine(-6.2, 8, Math.PI / 2);
-createVillageVendingMachine(6.2, -3, -Math.PI / 2);
-
-[
-  [-8, -12], [8, -12],
-  [-9, 8], [9, 8],
-  [-8, 22], [8, 22]
-].forEach(([x, z]) => createVillageTree(x, z));
+// 마을 구역별 현실적 오브제 배치 (해변 쪽 제외)
+populateJapaneseTown(scene, {
+  renderer,
+  plasterTexture,
+  woodTexture,
+  roofTexture,
+  cobbleTexture
+});
 
 // 해변 파라솔
 function createBeachUmbrella(x, z, canopyColor) {
@@ -1858,56 +1790,6 @@ socket.on('playerDisconnected', (playerId) => {
   console.log('상대방 캐릭터 제거:', playerId);
 });
 
-
-// 나무 만들기
-function createTree(x, z) {
-  const tree = new THREE.Group();
-
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.16, 0.22, 1.8, 16),
-    new THREE.MeshStandardMaterial({ color: 0x76523a, roughness: 1 })
-  );
-  trunk.position.y = 0.75;
-  tree.add(trunk);
-
-  const pineMaterials = [
-    new THREE.MeshStandardMaterial({ color: 0x477d68, roughness: 0.98 }),
-    new THREE.MeshStandardMaterial({ color: 0x3e735f, roughness: 0.98 }),
-    new THREE.MeshStandardMaterial({ color: 0x54836c, roughness: 0.98 })
-  ];
-  [
-    { position: [-0.48, 2.05, 0], scale: [1.35, 0.38, 0.82], material: 0 },
-    { position: [0.42, 2.22, -0.12], scale: [1.28, 0.34, 0.76], material: 1 },
-    { position: [-0.05, 2.52, 0.1], scale: [1.12, 0.34, 0.74], material: 2 },
-    { position: [0.36, 2.82, 0], scale: [0.9, 0.3, 0.6], material: 0 }
-  ].forEach(({ position, scale, material }) => {
-    const branchLayer = new THREE.Mesh(
-      new THREE.SphereGeometry(1, 20, 14),
-      pineMaterials[material]
-    );
-    branchLayer.position.set(...position);
-    branchLayer.scale.set(...scale);
-    branchLayer.castShadow = true;
-    tree.add(branchLayer);
-  });
-
-  tree.position.set(x, 0, z);
-  tree.traverse((obj) => {
-    if (obj.isMesh) {
-      obj.castShadow = true;
-      obj.receiveShadow = true;
-    }
-  });
-
-  scene.add(tree);
-}
-
-[
-  [-24, -6], [24, -5],
-  [-25, 5], [25, 6],
-  [-24, 17], [24, 18],
-  [-27, 30], [27, 31]
-].forEach(([x, z]) => createTree(x, z));
 
 // 키보드 입력
 const keys = {};
