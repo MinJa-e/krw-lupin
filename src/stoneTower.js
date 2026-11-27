@@ -1,10 +1,8 @@
 import * as THREE from 'three';
 
 const STONE_SHADES = [0x9a9186, 0x837c73, 0xa89f92];
-// 받침대·표시는 모래(#e6d5a8~#d4bf8d)와 비슷한 톤으로 은은하게 — 구역임을 살짝만 알린다.
-const PAD_STONE_COLOR = 0xcbb684;  // 다짐된 모래 톤 (모래보다 한 톤 진함)
-const PAD_RIM_COLOR = 0x9a8358;    // 어두운 모래 테두리
-const MARKER_COLOR = 0xb3975f;     // 안쪽 표시 링 (반투명)
+// 받침대는 테두리·링 없이 단색 원판 하나 — 모래(#d4bf8d)보다 살짝 짙은 톤으로만 구역을 알린다.
+const PAD_STONE_COLOR = 0xc6ad74;
 const INTERACT_RADIUS = 3.2;
 const COLLAPSE_CHANCE_PER_LAYER = 0.10;
 const COLLAPSE_CHANCE_CEILING = 0.50;
@@ -56,14 +54,8 @@ export function createStoneTower({
     roughness: 0.93
   }));
   const padMaterial = new THREE.MeshStandardMaterial({ color: PAD_STONE_COLOR, roughness: 0.95 });
-  const rimMaterial = new THREE.MeshStandardMaterial({ color: PAD_RIM_COLOR, roughness: 0.95 });
-  const markerMaterial = new THREE.MeshBasicMaterial({
-    color: MARKER_COLOR,
-    transparent: true,
-    opacity: 0.45
-  });
 
-  // 돌탑 쌓기 자리를 알리는 자연석 받침대와 테두리 링
+  // 돌탑 쌓기 자리: 단색 원판 하나뿐
   const pad = new THREE.Mesh(
     new THREE.CylinderGeometry(1.12, 1.18, 0.06, 24),
     padMaterial
@@ -71,23 +63,6 @@ export function createStoneTower({
   pad.position.y = 0.03;
   pad.receiveShadow = true;
   group.add(pad);
-
-  const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(1.13, 0.055, 6, 24),
-    rimMaterial
-  );
-  rim.rotation.x = Math.PI / 2;
-  rim.position.y = 0.05;
-  rim.receiveShadow = true;
-  group.add(rim);
-
-  const innerRing = new THREE.Mesh(
-    new THREE.RingGeometry(0.76, 0.88, 24),
-    markerMaterial
-  );
-  innerRing.rotation.x = -Math.PI / 2;
-  innerRing.position.y = 0.062;
-  group.add(innerRing);
 
   const stones = [];
   let falling = [];
