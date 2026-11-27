@@ -2,8 +2,11 @@
 import { test } from '@playwright/test';
 
 test('렌더 통계와 FPS 측정', async ({ page }) => {
-  await page.goto('/');
-  await page.waitForFunction(() => window.__krwLupinE2E, null, { timeout: 20000 });
+  await page.goto(process.env.PLAYWRIGHT_BASE_URL || '/', { waitUntil: 'domcontentloaded' });
+  const hasHook = await page.evaluate(() =>
+    Boolean(window.__krwLupinE2E && typeof window.__krwLupinE2E.getRenderStats === 'function'));
+  test.skip(!hasHook, '프로덕션 빌드에는 e2e 훅이 없다 — 로컬 e2e 전용 프로브');
+  await page.waitForTimeout(3000);
   await page.waitForTimeout(3000);
 
   const stats1 = await page.evaluate(() => window.__krwLupinE2E.getRenderStats());
